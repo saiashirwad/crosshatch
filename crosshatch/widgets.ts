@@ -1,12 +1,24 @@
 import { embed } from "@crosshatch/widget/embed"
 import { Finished } from "@crosshatch/widget/self"
-import { Effect, flow, Schema as S, SchemaGetter, Stream } from "effect"
+import type { StandardSchemaV1 } from "@standard-schema/spec"
+import { Cause, Effect, pipe, Schema as S, SchemaGetter, Stream } from "effect"
 import { UrlParams } from "effect/unstable/http"
+import * as Spanner from "liminal-util/Spanner"
 
 import { Allowance } from "./Allowance.ts"
 import * as Facade from "./Facade/Facade.ts"
 import { InternalEnv } from "./InternalEnv.ts"
 import { LinkChallengeId } from "./LinkChallengeId.ts"
+
+const span = Spanner.make(import.meta.url)
+
+export type Widget<Payload extends S.Codec<any, any>> = {
+  Payload: Payload["Type"]
+  standard: StandardSchemaV1<{ readonly x: string }, Payload["Type"]>
+  host: (
+    input: Payload["Type"],
+  ) => Effect.Effect<void, Cause.NoSuchElementError | S.SchemaError | UrlParams.UrlParamsError, InternalEnv>
+}
 
 const widget = <Payload extends S.Codec<any, any>, Item extends S.Codec<any, any>>({
   pathname,
@@ -16,7 +28,7 @@ const widget = <Payload extends S.Codec<any, any>, Item extends S.Codec<any, any
   readonly pathname: string
   readonly payload: Payload
   readonly item: Item
-}) => {
+}): Widget<Payload> => {
   const Payload = S.StringFromBase64Url.pipe(S.decodeTo(S.fromJsonString(S.toCodecJson(payload))))
   const standard = S.toStandardSchemaV1(
     S.Struct({ x: Payload }).pipe(
@@ -26,32 +38,28 @@ const widget = <Payload extends S.Codec<any, any>, Item extends S.Codec<any, any
       }),
     ),
   )
-  const host = flow(
-    S.encodeEffect(Payload),
-    Effect.flatMap(
-      Effect.fn(function* (x) {
-        const base = yield* InternalEnv.href(pathname)
-        const { href: src } = yield* UrlParams.makeUrl(base, UrlParams.make([["x", x]]), undefined)
-        return embed({
-          item: S.Union([item, Finished]),
-          src,
-          className: "crosshatch-widget",
-        })
-      }),
-    ),
-    Stream.unwrap,
-    Stream.filter(S.is(Finished)),
-    Stream.take(1),
-    Stream.runDrain,
-  )
-  return {
-    standard,
-    host,
-  } as {
-    Payload: Payload["Type"]
-    standard: typeof standard
-    host: typeof host
-  }
+  const host = (payload: Payload["Type"]) =>
+    pipe(
+      payload,
+      S.encodeEffect(Payload),
+      Effect.flatMap(
+        Effect.fn(function* (x) {
+          const base = yield* InternalEnv.href(pathname)
+          const { href: src } = yield* UrlParams.makeUrl(base, UrlParams.make([["x", x]]), undefined)
+          return embed({
+            item: S.Union([item, Finished]),
+            src,
+            className: "crosshatch-widget",
+          })
+        }),
+      ),
+      Stream.unwrap,
+      Stream.filter(S.is(Finished)),
+      Stream.take(1),
+      Stream.runDrain,
+      span("stream-host", { attributes: { pathname } }),
+    )
+  return { Payload, standard, host }
 }
 
 const Common = S.Struct({
