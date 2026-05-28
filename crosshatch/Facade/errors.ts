@@ -5,8 +5,6 @@ export class AssetNotSupportedError extends S.TaggedErrorClass<AssetNotSupported
   {},
 ) {}
 
-export class AllowanceDenialError extends S.TaggedErrorClass<AllowanceDenialError>()("AllowanceDenialError", {}) {}
-
 export class InsufficientFundsError extends S.TaggedErrorClass<InsufficientFundsError>()(
   "InsufficientFundsError",
   {},
@@ -25,7 +23,6 @@ export class EscalationError extends S.TaggedErrorClass<EscalationError>()("Esca
 
 export const DeclinedError = S.Union([
   AssetNotSupportedError,
-  AllowanceDenialError,
   InsufficientFundsError,
   InsufficientAllowanceRemainingError,
   AccountFrozenError,

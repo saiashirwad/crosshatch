@@ -3,13 +3,7 @@ import { Effect, Encoding, flow, Schema as S } from "effect"
 
 import * as Facade from "./Facade/Facade.ts"
 import { managedRuntime } from "./runtime.ts"
-import {
-  EscalationWidget,
-  OnrampExplainerWidget,
-  ThawAccountWidget,
-  ThawAppWidget,
-  RaiseAllowanceWidget,
-} from "./widgets.ts"
+import { EscalationWidget, OnrampWidget, ThawAccountWidget, ThawAppWidget, RaiseAllowanceWidget } from "./widgets.ts"
 
 export class CrosshatchFetchError extends S.TaggedErrorClass<CrosshatchFetchError>()("CrosshatchFetchError", {
   decision: Facade.DeclinedError,
@@ -29,7 +23,7 @@ export const makeFetch =
         ? Encoding.decodeBase64String(header)
             .asEffect()
             .pipe(Effect.flatMap(flow(JSON.parse, S.decodeUnknownEffect(S.toType(Required.Required)))))
-        : Effect.tryPromise(() => response.json()).pipe(
+        : Effect.promise(() => response.json()).pipe(
             Effect.flatMap(S.decodeUnknownEffect(S.toType(Required.Required))),
             Effect.filterOrFail(({ x402Version }) => x402Version === 1),
           )
@@ -37,7 +31,7 @@ export const makeFetch =
         Effect.catchTags({
           AppFrozenError: ThawAppWidget.host,
           AccountFrozenError: ThawAccountWidget.host,
-          InsufficientFundsError: OnrampExplainerWidget.host,
+          InsufficientFundsError: OnrampWidget.host,
           EscalationError: EscalationWidget.host,
           InsufficientAllowanceRemainingError: RaiseAllowanceWidget.host,
         }),
@@ -58,6 +52,6 @@ export const makeFetch =
           break
         }
       }
-      return yield* Effect.tryPromise(() => fetch(input, { ...init, headers }))
+      return yield* Effect.promise(() => fetch(input, { ...init, headers }))
     }).pipe((x) => managedRuntime.runPromise(x, { signal: init?.signal ?? undefined }))
   }

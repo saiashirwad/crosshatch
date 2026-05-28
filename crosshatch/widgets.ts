@@ -66,8 +66,8 @@ const Common = S.Struct({
   referrer: S.String.pipe(S.optional),
 })
 
-export const EventsWidget = widget({
-  pathname: "events",
+export const ActivityWidget = widget({
+  pathname: "activity",
   payload: Common,
   item: S.Never,
 })
@@ -106,7 +106,7 @@ export const RaiseAllowanceWidget = widget({
   item: S.Never,
 })
 
-export const OnrampExplainerWidget = widget({
+export const OnrampWidget = widget({
   pathname: "onramp",
   payload: Facade.InsufficientFundsError,
   item: S.Never,
