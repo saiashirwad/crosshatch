@@ -9,9 +9,15 @@
     "preview": "vocs preview"
   },
   "dependencies": {
+    "@crosshatch/caip": "workspace:*",
+    "@crosshatch/merchant": "workspace:*",
+    "@crosshatch/x402": "workspace:*",
     "@types/react": "catalog:",
+    "alchemy": "catalog:",
     "crosshatch": "workspace:*",
     "effect": "catalog:",
+    "effect-workerd": "workspace:*",
+    "portless": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
     "react-medium-image-zoom": "catalog:",
