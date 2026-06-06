@@ -1,13 +1,17 @@
+import * as Alchemy from "alchemy"
 import * as Cloudflare from "alchemy/Cloudflare"
+import * as GitHub from "alchemy/GitHub"
+import { Effect, Layer } from "effect"
+import * as AlchemicalEnv from "liminal-util/alchemicals/AlchemicalEnv"
+import { docs } from "liminal-util/alchemicals/docs"
 
-export const CrosshatchDocs = Cloudflare.StaticSite("CrosshatchDocs", {
-  name: "crosshatch-docs",
-  cwd: "docs",
-  command: "pnpm build",
-  outdir: "dist",
-  main: "docs/main.ts",
-  compatibility: { date: "2026-04-08" },
-  observability: { enabled: true },
-  assetsConfig: { notFoundHandling: "single-page-application" },
-  domain: "docs.crosshatch.dev",
-})
+export default Alchemy.Stack(
+  "crosshatch-docs",
+  {
+    state: Cloudflare.state(),
+    providers: Layer.mergeAll(Cloudflare.providers(), GitHub.providers()),
+  },
+  docs({
+    domain: "docs.crosshatch.dev",
+  }).pipe(Effect.provide(AlchemicalEnv.layer)),
+)

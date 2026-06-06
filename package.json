@@ -5,10 +5,9 @@
     "prepare": "ts-patch install -s",
     "build": "tsc -b",
     "watch": "tsc -b -w",
-    "clean": "node ./konfik/main.ts clean --ignore '**/repos'",
-    "deploy:github": "alchemy deploy stacks/github.ts --stage prod --yes --env-file .env --profile crosshatch-env",
-    "sync-repos": "node ./konfik/main.ts sync-repos",
-    "dev": "turbo run //#watch //#test dev",
+    "konfik": "node ./konfik/main.ts",
+    "clean": "pnpm konfik clean --ignore '**/repos'",
+    "dev": "turbo run //#watch dev",
     "test": "vitest run"
   },
   "devDependencies": {
@@ -27,14 +26,14 @@
     "effect": "catalog:",
     "fake-indexeddb": "catalog:",
     "happy-dom": "catalog:",
+    "liminal-util": "workspace:*",
     "oxfmt": "catalog:",
     "oxlint": "catalog:",
     "playwright": "catalog:",
     "ts-patch": "catalog:",
     "turbo": "catalog:",
     "typescript": "catalog:",
-    "vitest": "catalog:",
-    "wrangler": "catalog:"
+    "vitest": "catalog:"
   },
-  "packageManager": "pnpm@11.5.0"
+  "packageManager": "pnpm@11.5.2"
 }
