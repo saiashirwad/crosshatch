@@ -1,4 +1,4 @@
-import * as Stage from "@crosshatch/util/Stage"
+import { Stage } from "@crosshatch/util/Stage"
 import { Effect, Layer, ManagedRuntime } from "effect"
 import { FetchHttpClient } from "effect/unstable/http"
 import { OtlpSerialization, OtlpLogger, OtlpTracer } from "effect/unstable/observability"
@@ -8,16 +8,16 @@ import * as Boundary from "liminal-util/Boundary"
 
 import * as Facade from "./Facade/Facade.ts"
 
-const OtlpLive = Stage.Stage.pipe(
-  Effect.map(({ stage, url }) =>
-    stage !== "prod"
+const OtlpLive = Stage.pipe(
+  Effect.map(({ name, url }) =>
+    name !== "prod"
       ? Layer.mergeAll(
           OtlpLogger.layer({
-            url: url({ pathname: "otel/v1/logs" }),
+            url: url("otel/v1/logs"),
             resource: { serviceName: "crosshatch-lib" },
           }),
           OtlpTracer.layer({
-            url: url({ pathname: "otel/v1/traces" }),
+            url: url("otel/v1/traces"),
             resource: { serviceName: "crosshatch-lib" },
           }),
         ).pipe(Layer.provide(OtlpSerialization.layerJson))
@@ -32,7 +32,7 @@ const FacadeLive = Client.layerWorker({
 }).pipe(Layer.provide(Facade.FacadeWorker.layer))
 
 const Live = FacadeLive.pipe(
-  Layer.provideMerge(OtlpLive.pipe(Layer.provideMerge(Layer.mergeAll(Stage.layerConfig, FetchHttpClient.layer)))),
+  Layer.provideMerge(OtlpLive.pipe(Layer.provideMerge(FetchHttpClient.layer))),
   Boundary.layer("crosshatch", import.meta.url),
 )
 

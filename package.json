@@ -8,12 +8,13 @@
     "konfik": "node ./konfik/main.ts",
     "sync-repos": "pnpm konfik sync-repos",
     "clean": "pnpm konfik clean --ignore '**/repos'",
-    "dev": "turbo run //#watch //#aliases dev",
+    "dev": "turbo run //#watch //#aliases dev --filter=!./liminal/**",
     "aliases": "caddy run --config ./Caddyfile",
     "test": "vitest run"
   },
   "devDependencies": {
     "@changesets/cli": "catalog:",
+    "@crosshatch/caip": "workspace:*",
     "@effect/language-service": "catalog:",
     "@effect/platform-node": "catalog:",
     "@effect/vitest": "catalog:",
@@ -37,5 +38,5 @@
     "typescript": "catalog:",
     "vitest": "catalog:"
   },
-  "packageManager": "pnpm@11.6.0"
+  "packageManager": "pnpm@11.8.0"
 }

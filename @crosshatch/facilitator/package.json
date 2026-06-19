@@ -27,16 +27,15 @@
     "dev": "alchemy dev --env-file ../../.env"
   },
   "devDependencies": {
-    "@effect/openapi-generator": "catalog:",
-    "@effect/platform-node": "catalog:",
-    "swagger2openapi": "catalog:",
-    "yaml": "catalog:"
+    "vite": "catalog:"
   },
   "peerDependencies": {
-    "@coinbase/cdp-sdk": "catalog:",
+    "@crosshatch/assets": "workspace:*",
     "@crosshatch/caip": "workspace:*",
+    "@crosshatch/merchant": "workspace:*",
     "@crosshatch/util": "workspace:*",
     "@crosshatch/x402": "workspace:*",
+    "@distilled.cloud/coinbase": "catalog:",
     "alchemy": "catalog:",
     "crosshatch": "workspace:*",
     "effect": "catalog:",
