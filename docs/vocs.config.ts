@@ -30,39 +30,74 @@ export default defineConfig({
   sidebar: {
     "/": [
       {
-        text: "Introduction",
+        text: "Start Here",
         items: [
+          { text: "Overview", link: "/" },
           { text: "Quickstart", link: "/quickstart" },
-          { text: "Examples" },
-          { text: "Lifecycle", link: "/lifecycle" },
+          { text: "x402 Lifecycle", link: "/lifecycle" },
           { text: "Why Crosshatch?", link: "/why" },
         ],
       },
       {
-        text: "Payment Flow",
+        text: "Core x402 Toolkit",
         items: [
-          { text: "Create Requirements" },
-          { text: "Propose" },
-          { text: "Settle Payloads" },
-          { text: "Settlement Strategy", link: "/merchants/granular-settlement" },
-          { text: "OpenTelemetry", link: "/merchants/opentelemetry" },
-          { text: "Error Recovery" },
+          { text: "Schemas", link: "/x402/schemas" },
+          { text: "Requirements", link: "/x402/requirements" },
+          { text: "Payment Payloads", link: "/x402/payloads" },
+          { text: "Amounts & Assets", link: "/x402/assets" },
+          { text: "CAIP Identifiers", link: "/x402/caip" },
         ],
       },
       {
-        text: "Integration Guides",
+        text: "HTTP 402",
         items: [
-          { text: "Effect HTTP", link: "/merchants/effect-http" },
-          { text: "Effect RPC", link: "/merchants/effect-rpc" },
-          { text: "Effect AI", link: "/merchants/effect-ai" },
-          { text: "Effect Sockets", link: "/merchants/socket" },
+          { text: "Effect HTTP", link: "/http/effect-http" },
+          { text: "Middleware", link: "/http/middleware" },
+          { text: "Headers", link: "/http/headers" },
+          { text: "Custom Servers", link: "/http/custom" },
+        ],
+      },
+      {
+        text: "Effect Integrations",
+        items: [
+          { text: "Effect RPC", link: "/effect/rpc" },
+          { text: "Effect AI", link: "/effect/ai" },
+          { text: "Effect Sockets", link: "/effect/sockets" },
+          { text: "Tracing", link: "/effect/tracing" },
         ],
       },
       {
         text: "Facilitation",
         items: [
+          { text: "Overview", link: "/facilitation" },
+          { text: "Verify", link: "/facilitation/verify" },
+          { text: "Settle", link: "/facilitation/settle" },
+          { text: "Supported Payments", link: "/facilitation/supported" },
+          { text: "Custom Facilitator", link: "/facilitation/custom" },
+        ],
+      },
+      {
+        text: "Settlement Patterns",
+        items: [
+          { text: "Granular Settlement", link: "/merchants/granular-settlement" },
+          { text: "Deposit + Rebate", link: "/merchants/deposit-rebate" },
+          { text: "OpenTelemetry", link: "/merchants/opentelemetry" },
+        ],
+      },
+      {
+        text: "Browser Wallet",
+        items: [
+          { text: "Overview", link: "/browser-wallet" },
+          { text: "Fetch Wrapper", link: "/browser-wallet/fetch" },
+          { text: "Allowances", link: "/allowances" },
+          { text: "Escalations", link: "/escalations" },
+          { text: "Widgets", link: "/browser-wallet/widgets" },
+        ],
+      },
+      {
+        text: "Development",
+        items: [
           { text: "Local Development", link: "/development" },
-          { text: "Custom Endpoint", link: "/facilitation" },
         ],
       },
     ],

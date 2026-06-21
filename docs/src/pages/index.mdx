@@ -1,6 +1,6 @@
 ---
 title: Crosshatch
-description: Embedded x402 payments for apps and agents.
+description: Everything x402 for Effect.
 layout: minimal
 showAskAi: false
 showLogo: false
@@ -8,63 +8,59 @@ showLogo: false
 
 import { Card, HomePage } from "vocs"
 
-import { ConnectButton } from "../../components/ConnectButton"
-
 <HomePage.Root>
   <HomePage.Logo />
 
-<HomePage.Tagline>Embedded x402 payments for apps and agents.</HomePage.Tagline>
+<HomePage.Tagline>Everything x402 for Effect.</HomePage.Tagline>
 
 <HomePage.Description>
-  Add app-native payments that respond to 402s, sign payloads from the user's wallet, and settle paid resources without
-  rebuilding payment infrastructure.
+  Build paid HTTP, RPC, agent, and app workflows with x402 schemas, Effect-native payment helpers, facilitator clients,
+  settlement utilities, tracing, and an optional embedded browser wallet.
 </HomePage.Description>
-
-<ConnectButton />
 
 <HomePage.Buttons>
   <HomePage.Button href="/quickstart" variant="accent">
     Get started
   </HomePage.Button>
-  <HomePage.Button href="/merchants/effect-http">Merchant integrations</HomePage.Button>
+  <HomePage.Button href="/x402/schemas">Explore the toolkit</HomePage.Button>
 </HomePage.Buttons>
 
   <div className="vocs:grid vocs:w-full vocs:max-w-5xl vocs:grid-cols-1 vocs:gap-4 vocs:text-left vocs:md:grid-cols-2 vocs:lg:grid-cols-3">
     <Card
-      title="Quickstart"
-      description="Install Crosshatch and make your first app-native paid request."
-      icon="rocket"
-      to="/quickstart"
+      title="Core x402 Toolkit"
+      description="Use Effect Schema definitions for payment requirements, payloads, resources, versions, and CAIP identifiers."
+      icon="box"
+      to="/x402/schemas"
     />
     <Card
-      title="Lifecycle"
-      description="Trace a payment from 402 response through proposal, signing, and settlement."
-      icon="route"
-      to="/lifecycle"
+      title="HTTP 402"
+      description="Return and consume standards-compatible 402 responses with Effect HTTP middleware and headers."
+      icon="receipt"
+      to="/http/effect-http"
     />
     <Card
-      title="Allowances"
-      description="Bound repeated payments with user-approved app-scoped spending limits."
-      icon="code"
-      to="/allowances"
+      title="Effect Integrations"
+      description="Add payment requirements to Effect RPC, AI, sockets, and other Effect-native service boundaries."
+      icon="plug"
+      to="/effect/rpc"
     />
     <Card
-      title="Merchants"
-      description="Pick settlement strategies and expose paid resources from your services."
+      title="Facilitation"
+      description="Verify payloads, query supported schemes, and settle x402 payments through facilitator APIs."
+      icon="badge-dollar-sign"
+      to="/facilitation"
+    />
+    <Card
+      title="Settlement Patterns"
+      description="Choose granular settlement, deposit flows, or traceable merchant-side payment accounting."
       icon="store"
       to="/merchants/granular-settlement"
     />
     <Card
-      title="Integrations"
-      description="Return standards-compliant 402s from Effect HTTP, RPC, or custom stacks."
-      icon="plug"
-      to="/merchants/effect-http"
-    />
-    <Card
-      title="Facilitation"
-      description="Verify payment payloads and connect merchant requests to settlement infrastructure."
-      icon="badge-dollar-sign"
-      to="/facilitation"
+      title="Browser Wallet"
+      description="Use the included embedded wallet export when you need app-scoped allowances, widgets, and automatic paid fetch."
+      icon="wallet"
+      to="/browser-wallet"
     />
   </div>
 </HomePage.Root>
