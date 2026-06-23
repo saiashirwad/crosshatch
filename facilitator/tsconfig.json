@@ -1,10 +1,10 @@
 {
-  "extends": "../../konfik/tsconfig.base",
+  "extends": "../konfik/tsconfig.base",
   "compilerOptions": {
     "noEmit": false,
     "outDir": "dist"
   },
   "include": ["."],
   "exclude": ["dist", "vitest.config.ts"],
-  "references": [{ "path": "../../crosshatch" }, { "path": "../assets" }]
+  "references": [{ "path": "../crosshatch" }]
 }
