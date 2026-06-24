@@ -47,8 +47,8 @@ const permit2WitnessTypes = {
   ],
 } as const
 
-export const make = Effect.fn(function* (
-  signer: EvmSigner["Service"],
+export const make = Effect.fnUntraced(function* (
+  signer: EvmSigner,
   requirement: typeof Requirements.Requirements.Type,
 ) {
   const now = Math.floor(Date.now() / 1000)
