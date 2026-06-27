@@ -1,7 +1,7 @@
-import { ChainIdString } from "crosshatch/Ca"
 import { Schema as S } from "effect"
 import { HttpApiEndpoint, OpenApi } from "effect/unstable/httpapi"
 
+import { ChainId } from "../ChainId.ts"
 import { Version } from "../Version.ts"
 
 // TODO: drop v1 support?
@@ -10,7 +10,7 @@ const LegacyNetwork = S.Literals(["base-sepolia", "base", "solana-devnet", "sola
 export const SupportedKind = S.Struct({
   x402Version: Version,
   scheme: S.String,
-  network: S.Union([ChainIdString, LegacyNetwork]),
+  network: S.Union([ChainId, LegacyNetwork]),
   extra: S.Record(S.String, S.Unknown).pipe(S.optional),
 })
 

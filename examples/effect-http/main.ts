@@ -1,7 +1,7 @@
-import { Asset, settle, KnownAsset } from "crosshatch"
-import { CaConfig } from "crosshatch/Ca"
+import { settle, Required, Requirements, PaymentId } from "crosshatch"
+import { EvmAddress } from "crosshatch/Evm"
 import { Http402Middleware, Http402Payload, EXPOSED_HEADERS } from "crosshatch/Http402"
-import { Required } from "crosshatch/X402"
+import { USDC } from "crosshatch/KnownAsset"
 import { Layer, Effect } from "effect"
 import { Worker } from "effect-workerd"
 import { HttpRouter, HttpServerResponse } from "effect/unstable/http"
@@ -13,15 +13,18 @@ export default Worker.make({
     Effect.gen(function* () {
       const payload = yield* Http402Payload.Http402Payload
       if (!payload) {
-        const required = Required.builder({
+        const required = yield* Required.empty({
           url: "https://example-merchant.com",
         }).pipe(
-          Required.accepts(
-            Asset.requirements(KnownAsset.USDC, {
+          Required.extend(PaymentId.PaymentIdExtension, {
+            required: true,
+          }),
+          Required.accept(
+            Requirements.group(USDC, {
               amount: 0.01,
               recipients: {
                 eip155: {
-                  8453: yield* CaConfig.accountAddress("PAY_TO_EVM"),
+                  8453: yield* EvmAddress.config("PAY_TO_EVM"),
                 },
               },
             }),
