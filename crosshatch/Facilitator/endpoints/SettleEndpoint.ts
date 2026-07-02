@@ -1,11 +1,11 @@
-import { Schema as S } from "effect"
+import { Schema as S, String } from "effect"
 import { HttpApiEndpoint, OpenApi } from "effect/unstable/httpapi"
 
-import { ChainId } from "../ChainId.ts"
-import { Payload } from "../Payload.ts"
-import { Requirements } from "../Requirements.ts"
+import { ChainId } from "../../ChainId.ts"
+import { Payload } from "../../Payload.ts"
+import { Requirements } from "../../Requirements.ts"
 
-export const Settle = HttpApiEndpoint.post("settle", "/settle", {
+export const SettleEndpoint = HttpApiEndpoint.post("settle", "/settle", {
   payload: S.Struct({
     paymentPayload: Payload,
     paymentRequirements: Requirements,
@@ -26,8 +26,8 @@ export const Settle = HttpApiEndpoint.post("settle", "/settle", {
   ]),
 }).annotate(
   OpenApi.Description,
-  `
-    Executes a verified payment by broadcasting the transaction to the blockchain.
-    Returns the transaction hash and network on success, or an error reason on failure.
-  `,
+  String.stripMargin(`
+  | Executes a verified payment by broadcasting the transaction to the blockchain.
+  | Returns the transaction hash and network on success, or an error reason on failure.
+  `),
 )

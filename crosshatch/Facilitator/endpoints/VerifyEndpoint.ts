@@ -1,10 +1,10 @@
-import { Schema as S } from "effect"
+import { Schema as S, String } from "effect"
 import { HttpApiEndpoint, OpenApi } from "effect/unstable/httpapi"
 
-import { Payload } from "../Payload.ts"
-import { Requirements } from "../Requirements.ts"
+import { Payload } from "../../Payload.ts"
+import { Requirements } from "../../Requirements.ts"
 
-export const Verify = HttpApiEndpoint.post("verify", "/verify", {
+export const VerifyEndpoint = HttpApiEndpoint.post("verify", "/verify", {
   payload: S.Struct({
     paymentPayload: Payload,
     paymentRequirements: Requirements,
@@ -23,8 +23,8 @@ export const Verify = HttpApiEndpoint.post("verify", "/verify", {
   ]),
 }).annotate(
   OpenApi.Description,
-  `
-    Verifies a payment authorization without executing the transaction on the blockchain.
-    Returns whether the payment is valid, along with any invalidity reasons.
-  `,
+  String.stripMargin(`
+  | Verifies a payment authorization without executing the transaction on the blockchain.
+  | Returns whether the payment is valid, along with any invalidity reasons.
+  `),
 )

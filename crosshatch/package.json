@@ -24,9 +24,7 @@
     "./Browser": "./Browser/Browser.ts",
     "./Crypto": "./Crypto/Crypto.ts",
     "./Evm": "./Evm/Evm.ts",
-    "./Facade": "./Facade/Facade.ts",
-    "./Http402": "./Http402/Http402.ts",
-    "./KnownAsset": "./KnownAsset/KnownAsset.ts",
+    "./Facade": "./Browser/Facade/Facade.ts",
     "./Svm": "./Svm/Svm.ts",
     "./internal": "./internal/internal.ts",
     "./package.json": "./package.json"
@@ -38,9 +36,7 @@
       "./Browser": "./dist/Browser/Browser.js",
       "./Crypto": "./dist/Crypto/Crypto.js",
       "./Evm": "./dist/Evm/Evm.js",
-      "./Facade": "./dist/Facade/Facade.js",
-      "./Http402": "./dist/Http402/Http402.js",
-      "./KnownAsset": "./dist/KnownAsset/KnownAsset.js",
+      "./Facade": "./dist/Browser/Facade/Facade.js",
       "./Svm": "./dist/Svm/Svm.js",
       "./internal": "./dist/internal/internal.js",
       "./package.json": "./package.json"
