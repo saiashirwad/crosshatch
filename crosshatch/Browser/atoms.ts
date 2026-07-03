@@ -2,7 +2,7 @@ import { Effect, Match, Cause } from "effect"
 import { Atom } from "effect/unstable/reactivity"
 import * as Boundary from "liminal-util/Boundary"
 
-import { Usd } from "../Amount.ts"
+import * as Amount from "../Amount.ts"
 import { Stage } from "../Stage.ts"
 import { FacadeClient } from "./Facade/Facade.ts"
 import { atomRuntime } from "./runtime.ts"
@@ -34,6 +34,7 @@ export const openAtom = atomRuntime.fn<void>()(
     const common = { referrer: location.href }
     const { url } = yield* Stage
     const internal = origin.startsWith(url())
+    const amount = yield* Amount.from(10)
     yield* Match.valueTags(state, {
       Challenged: ({ challengeId }) =>
         internal
@@ -41,7 +42,7 @@ export const openAtom = atomRuntime.fn<void>()(
           : LinkWidget.host({
               challengeId,
               allowance: {
-                amount: Usd.make(10_000_000n),
+                amount,
                 window: "Week",
               },
               ...common,

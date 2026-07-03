@@ -1,10 +1,14 @@
 import * as Host from "@crosshatch/widget/Host"
 import { BrowserWorker, BrowserStream } from "@effect/platform-browser"
-import { Effect, Fiber, Layer, Stream, Schema as S, Schedule } from "effect"
+import { Effect, Fiber, Layer, Stream, Schema as S, Schedule, Data } from "effect"
 import * as Boundary from "liminal-util/Boundary"
 
 import { Stage } from "../../Stage.ts"
 import { FacadeIntroduction, RequestFacadeIntroduction } from "./handshake.ts"
+
+export class FacadeWorkerError extends Data.TaggedError("FacadeWorkerError")<{
+  readonly cause: unknown
+}> {}
 
 export const layer = Effect.gen(function* () {
   yield* Host.hostListener.pipe(Effect.forkScoped)
@@ -26,7 +30,9 @@ export const layer = Effect.gen(function* () {
   Object.assign(iframe.style, { cssText })
   document.body.appendChild(iframe)
   yield* Fiber.join(fiber)
-  const context = yield* Effect.fromNullishOr(iframe.contentWindow)
+  const context = yield* Effect.fromNullishOr(iframe.contentWindow).pipe(
+    Effect.mapError((cause) => new FacadeWorkerError({ cause })),
+  )
   const { port1, port2 } = new MessageChannel()
   context.postMessage(FacadeIntroduction.make({}), url(), [port2])
   yield* Effect.addFinalizer(() => Effect.sync(() => iframe.remove()))
