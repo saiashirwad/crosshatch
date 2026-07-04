@@ -51,6 +51,9 @@
     "liminal": "workspace:*",
     "liminal-util": "workspace:*",
     "ox": "catalog:",
-    "viem": "catalog:"
+    "viem": "catalog:",
+    "@solana/spl-token": "catalog:",
+    "@solana/web3.js": "catalog:",
+    "ed25519-hd-key": "catalog:"
   }
 }
