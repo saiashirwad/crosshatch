@@ -11,7 +11,7 @@ export class SvmChain extends Chain.Service<SvmChain>()("crosshatch/Svm/SvmChain
 export const fromSigner = (signer: SvmSigner): Chain.Chain =>
   ({
     createPayload: Effect.fnUntraced(function* ({ accepted, extensions }) {
-      // No transfer-method based branching likeEVM (i.e., no permit2 vs eip3009) -
+      // No transfer-method based branching like EVM (i.e., no permit2 vs eip3009) -
       // Solana has a single SPL (Solana Program Library) transfer path
       const payload = yield* SvmPayload.make(signer, accepted)
       return {

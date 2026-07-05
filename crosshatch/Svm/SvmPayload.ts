@@ -1,9 +1,10 @@
 import { createTransferInstruction, getAssociatedTokenAddressSync, TOKEN_PROGRAM_ID } from "@solana/spl-token"
 import { Connection, PublicKey, Transaction } from "@solana/web3.js"
-import { Config, Effect, Schema as S, Encoding } from "effect"
+import { Config, Effect, Encoding, Schema as S } from "effect"
 
 import { CreatePayloadError } from "../errors.ts"
 import type { Requirements } from "../Requirements.ts"
+import * as SvmAddress from "./SvmAddress.ts"
 import type { SvmSigner } from "./SvmSigner.ts"
 
 export const SvmPayload = S.Struct({
@@ -11,13 +12,19 @@ export const SvmPayload = S.Struct({
   transaction: S.String,
 })
 
-export const make = Effect.fnUntraced(function* (signer: SvmSigner, requirement: typeof Requirements.Type) {
-  // The Facilitator's sponsor account pays the SOL tx fee - set as feePayer so it's the first signer
-  const feePayer = requirement.extra?.feePayer
-  if (!feePayer) {
-    return yield* new CreatePayloadError({})
-  }
+const SvmExtraSchema = S.Struct({
+  feePayer: SvmAddress.SvmAddress,
+})
 
+const getFeePayer = (data: unknown) =>
+  S.decodeUnknownEffect(SvmExtraSchema)(data).pipe(
+    Effect.map(({ feePayer }) => feePayer),
+    Effect.mapError((cause) => new CreatePayloadError({ cause })),
+  )
+
+export const make = Effect.fnUntraced(function* (signer: SvmSigner, requirement: typeof Requirements.Type) {
+  // Extract the feePayer from the x402 payment requirements
+  const feePayer = yield* getFeePayer(requirement.extra)
   // e.g. https://api.mainnet.solana.com
   // NOTE: do we just want to hard-code this?
   const rpcEndpoint = yield* Config.string("SVM_RPC_ENDPOINT").pipe(
