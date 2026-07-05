@@ -1,138 +1,127 @@
-import { createTransferCheckedInstruction, getAssociatedTokenAddressSync, MintLayout } from "@solana/spl-token"
+import { getSetComputeUnitLimitInstruction, getSetComputeUnitPriceInstruction } from "@solana-program/compute-budget"
+import { getAddMemoInstruction } from "@solana-program/memo"
+import { fetchMaybeMint, findAssociatedTokenPda, getTransferCheckedInstruction } from "@solana-program/token"
+import { address } from "@solana/addresses"
 import {
-  Connection,
-  PublicKey,
-  TransactionInstruction,
-  TransactionMessage,
-  VersionedTransaction,
-} from "@solana/web3.js"
-import { Config, Effect, Encoding, Schema as S } from "effect"
+  appendTransactionMessageInstructions,
+  createTransactionMessage,
+  pipe,
+  setTransactionMessageFeePayer,
+  setTransactionMessageLifetimeUsingBlockhash,
+} from "@solana/kit"
+import { createSolanaRpc } from "@solana/rpc"
+import { partiallySignTransactionMessageWithSigners } from "@solana/signers"
+import { getBase64EncodedWireTransaction } from "@solana/transactions"
+import { Config, Effect, Schema as S } from "effect"
 
 import { CreatePayloadError } from "../errors.ts"
 import type { Requirements } from "../Requirements.ts"
 import * as SvmAddress from "./SvmAddress.ts"
+import * as SvmAsset from "./SvmAsset.ts"
 import type { SvmSigner } from "./SvmSigner.ts"
 
 export const SvmPayload = S.Struct({
-  // Solana payment payload — base64 transaction, partially signed by the payer.
   transaction: S.String,
 })
 
+const utf8ByteLength = (s: string): number => new TextEncoder().encode(s).length
+
+const randomNonce = (): string => {
+  const bytes = crypto.getRandomValues(new Uint8Array(16))
+  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("")
+}
+
 const SvmExtraSchema = S.Struct({
   feePayer: SvmAddress.SvmAddress,
-  memo: S.optional(S.String),
+  memo: S.optional(S.String.pipe(S.refine((s): s is string => utf8ByteLength(s) <= 256))),
 })
 
 const getExtra = (data: unknown) =>
   S.decodeUnknownEffect(SvmExtraSchema)(data).pipe(Effect.mapError((cause) => new CreatePayloadError({ cause })))
 
-const RpcParsedMintSchema = S.Struct({
-  type: S.Literal("mint"),
-  info: S.Struct({
-    decimals: S.Number,
-  }),
-})
+const fetchMintDetails = Effect.fnUntraced(
+  function* (rpc: ReturnType<typeof createSolanaRpc>, mint: typeof SvmAsset.SvmAsset.Type) {
+    const mintAccount = yield* Effect.promise(() => fetchMaybeMint(rpc, address(mint)))
 
-const fetchMintDetails = Effect.fnUntraced(function* (connection: Connection, mint: PublicKey) {
-  // NOTE: we should probably cache these mint details using a RequestResolver (overengineering for now?)
-  // Right now we ask the rate-limited RPC for immutable data on every single transaction
-  const mintInfo = yield* Effect.tryPromise({
-    try: () => connection.getParsedAccountInfo(mint),
-    catch: (cause) => new CreatePayloadError({ cause }),
-  })
+    if (!mintAccount.exists) {
+      return yield* new CreatePayloadError({ cause: "Mint not found" })
+    }
 
-  if (!mintInfo.value) {
-    return yield* new CreatePayloadError({ cause: "Mint not found" })
-  }
+    return {
+      decimals: mintAccount.data.decimals,
+      tokenProgramId: mintAccount.programAddress,
+    }
+  },
+  Effect.mapError((cause) => new CreatePayloadError({ cause })),
+)
 
-  const accountData = mintInfo.value.data
-  let decimals: number
+export const make = Effect.fnUntraced(
+  function* (signer: SvmSigner, requirement: typeof Requirements.Type) {
+    const { feePayer, memo } = yield* getExtra(requirement.extra)
 
-  if ("parsed" in accountData) {
-    decimals = yield* S.decodeUnknownEffect(RpcParsedMintSchema)(accountData.parsed).pipe(
-      Effect.map(({ info }) => info.decimals),
+    const rpcEndpoint = yield* Config.string("SVM_RPC_ENDPOINT").pipe(
+      Config.withDefault("https://api.mainnet.solana.com"),
       Effect.mapError((cause) => new CreatePayloadError({ cause })),
     )
-  } else {
-    decimals = yield* Effect.try({
-      try: () => MintLayout.decode(accountData).decimals,
-      catch: (cause) => new CreatePayloadError({ cause }),
-    })
-  }
+    const rpc = createSolanaRpc(rpcEndpoint)
 
-  return {
-    decimals,
-    programId: mintInfo.value.owner,
-  }
-})
+    const mintAsset = yield* S.decodeUnknownEffect(SvmAsset.SvmAsset)(requirement.asset).pipe(
+      Effect.mapError((cause) => new CreatePayloadError({ cause })),
+    )
+    const mint = address(mintAsset)
 
-export const make = Effect.fnUntraced(function* (signer: SvmSigner, requirement: typeof Requirements.Type) {
-  // The Sponsor's (feePayer) address provided by the Facilitator to cover SOL network fees
-  const { feePayer, memo } = yield* getExtra(requirement.extra)
+    const { decimals, tokenProgramId } = yield* fetchMintDetails(rpc, mintAsset)
 
-  // Public Solana RPC endpoints can be severely ratelimited
-  // NOTE: we might need to support an array of RPC URLs to load balance between
-  const rpcEndpoint = yield* Config.string("SVM_RPC_ENDPOINT").pipe(
-    Config.withDefault("https://api.mainnet.solana.com"),
-    Effect.mapError((cause) => new CreatePayloadError({ cause })),
-  )
-  const connection = new Connection(rpcEndpoint)
+    const owner = address(signer.address)
+    const dest = address(requirement.payTo)
+    const amount = BigInt(requirement.amount)
 
-  // on-chain account that represents a specific token
-  const mint = new PublicKey(requirement.asset)
+    const [[sourceAta], [destAta]] = yield* Effect.tryPromise(() =>
+      Promise.all([
+        findAssociatedTokenPda({ owner, mint, tokenProgram: tokenProgramId }),
+        findAssociatedTokenPda({ owner: dest, mint, tokenProgram: tokenProgramId }),
+      ]),
+    )
 
-  const {
-    decimals,
-    // Specifies if the transfer should route to either SPL or Token-2022
-    programId: tokenProgramId,
-  } = yield* fetchMintDetails(connection, mint)
+    const { value: latestBlockhash } = yield* Effect.promise(() => rpc.getLatestBlockhash().send())
 
-  const owner = new PublicKey(signer.address)
-  const dest = new PublicKey(requirement.payTo)
-  const amount = BigInt(requirement.amount)
+    const transferInstruction = getTransferCheckedInstruction(
+      {
+        source: sourceAta,
+        mint,
+        destination: destAta,
+        authority: signer.signer,
+        amount,
+        decimals,
+      },
+      {
+        programAddress: tokenProgramId,
+      },
+    )
 
-  // Each wallet's token account for this mint - deterministically derived from (mint, owner)
-  const sourceAta = getAssociatedTokenAddressSync(mint, owner, false, tokenProgramId)
-  const destAta = getAssociatedTokenAddressSync(mint, dest, false, tokenProgramId)
+    const memoText = memo ?? randomNonce()
+    const memoInstruction = getAddMemoInstruction({ memo: memoText })
 
-  // Every transaction on Solana must reference a recent blockhash
-  const { blockhash } = yield* Effect.tryPromise({
-    try: () => connection.getLatestBlockhash(),
-    catch: (cause) => new CreatePayloadError({ cause }),
-  })
+    const limitInstruction = getSetComputeUnitLimitInstruction({ units: 100_000 })
+    const priceInstruction = getSetComputeUnitPriceInstruction({ microLamports: 100_000n })
 
-  const transferInstruction = createTransferCheckedInstruction(
-    sourceAta,
-    mint,
-    destAta,
-    owner,
-    amount,
-    decimals,
-    [],
-    tokenProgramId,
-  )
-  const memoText = memo ?? crypto.randomUUID()
-  const memoInstruction = new TransactionInstruction({
-    keys: [],
-    programId: new PublicKey("MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr"),
-    data: Buffer.from(memoText, "utf-8"),
-  })
+    const transactionMessage = pipe(
+      createTransactionMessage({ version: 0 }),
+      (m) => setTransactionMessageFeePayer(address(feePayer), m),
+      (m) => setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, m),
+      (m) =>
+        appendTransactionMessageInstructions(
+          [limitInstruction, priceInstruction, transferInstruction, memoInstruction],
+          m,
+        ),
+    )
 
-  const messageV0 = new TransactionMessage({
-    payerKey: new PublicKey(feePayer),
-    recentBlockhash: blockhash,
-    instructions: [transferInstruction, memoInstruction],
-  }).compileToV0Message()
+    const signedTransaction = yield* Effect.promise(() =>
+      partiallySignTransactionMessageWithSigners(transactionMessage),
+    )
 
-  const tx = new VersionedTransaction(messageV0)
-
-  yield* Effect.tryPromise({
-    try: () => signer.signTransaction(tx),
-    catch: (cause) => new CreatePayloadError({ cause }),
-  })
-
-  // serialize the partially signed transaction to base64
-  // the facilitator will provide the final signature before broadcasting to the network
-  const transaction = Encoding.encodeBase64(tx.serialize())
-  return { transaction } satisfies typeof SvmPayload.Type
-})
+    const transaction = getBase64EncodedWireTransaction(signedTransaction)
+    return { transaction } satisfies typeof SvmPayload.Type
+  },
+  Effect.mapError((cause) => new CreatePayloadError({ cause })),
+)

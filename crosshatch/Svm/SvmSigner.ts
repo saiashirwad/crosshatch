@@ -1,19 +1,39 @@
-import { Keypair, type VersionedTransaction } from "@solana/web3.js"
+import { getAddressFromPublicKey } from "@solana/addresses"
+import { createKeyPairFromBytes } from "@solana/keys"
+import { createKeyPairSignerFromBytes, type KeyPairSigner } from "@solana/signers"
+import { derivePath } from "ed25519-hd-key"
+import { Redacted, Schema as S } from "effect"
+import { Ed25519, Hex, Mnemonic as OxMnemonic } from "ox"
 
-import type { SvmAddress } from "./SvmAddress"
+import type { MnemonicRedacted } from "../Mnemonic.ts"
+import { SvmAddress } from "./SvmAddress.ts"
 
 export interface SvmSigner {
-  readonly address: typeof SvmAddress.Encoded
-  readonly signTransaction: (transaction: VersionedTransaction) => Promise<VersionedTransaction>
+  readonly address: typeof SvmAddress.Type
+  readonly signer: KeyPairSigner
 }
 
-export const fromSecretKey = (secretKey: Uint8Array): SvmSigner => {
-  const keypair = Keypair.fromSecretKey(secretKey)
+export const fromSecretKey = async (secretKey: Uint8Array): Promise<SvmSigner> => {
+  const signer = await createKeyPairSignerFromBytes(secretKey)
   return {
-    address: keypair.publicKey.toBase58(),
-    signTransaction: async (transaction) => {
-      transaction.sign([keypair])
-      return transaction
-    },
+    address: S.decodeUnknownSync(SvmAddress)(signer.address),
+    signer,
   }
+}
+
+export const getSecretKey = (mnemonic: typeof MnemonicRedacted.Type) => {
+  const seed = Hex.fromBytes(OxMnemonic.toSeed(Redacted.value(mnemonic)))
+  const { key: privateKey } = derivePath("m/44'/501'/0'/0'", seed)
+  const publicKey = Ed25519.getPublicKey({ privateKey, as: "Bytes" })
+  const secretKey = new Uint8Array(64)
+  secretKey.set(privateKey, 0)
+  secretKey.set(publicKey, 32)
+  return secretKey
+}
+
+export const fromMnemonic = async (mnemonic: typeof MnemonicRedacted.Type) => {
+  const secretKey = getSecretKey(mnemonic)
+  const keyPair = await createKeyPairFromBytes(secretKey)
+  const address = await getAddressFromPublicKey(keyPair.publicKey)
+  return S.decodeUnknownSync(SvmAddress)(address)
 }
