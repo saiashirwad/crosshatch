@@ -9,8 +9,16 @@ export const handleSupported = handler(Facilitator.FacilitatorApi, "facilitator"
     Effect.flatMap(({ kinds, ...rest }) =>
       Effect.forEach(
         kinds,
-        ({ network, ...rest }) =>
-          S.decodeUnknownEffect(ChainId.ChainId)(network).pipe(Effect.map((network) => ({ network, ...rest }))),
+        Effect.fn(function* (kind) {
+          const { x402Version, network, ...rest } = kind
+          return yield* S.decodeUnknownEffect(ChainId.ChainId)(network).pipe(
+            Effect.map((network) => ({
+              x402Version: 2 as const,
+              network,
+              ...rest,
+            })),
+          )
+        }),
         { concurrency: "unbounded" },
       ).pipe(Effect.map((kinds) => ({ kinds, ...rest }))),
     ),
