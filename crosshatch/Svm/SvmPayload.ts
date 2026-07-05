@@ -1,7 +1,12 @@
 import { createTransferCheckedInstruction, getAssociatedTokenAddressSync, MintLayout } from "@solana/spl-token"
-import { Connection, PublicKey, TransactionMessage, VersionedTransaction } from "@solana/web3.js"
+import {
+  Connection,
+  PublicKey,
+  TransactionInstruction,
+  TransactionMessage,
+  VersionedTransaction,
+} from "@solana/web3.js"
 import { Config, Effect, Encoding, Schema as S } from "effect"
-import * as Boundary from "liminal-util/Boundary"
 
 import { CreatePayloadError } from "../errors.ts"
 import type { Requirements } from "../Requirements.ts"
@@ -15,13 +20,11 @@ export const SvmPayload = S.Struct({
 
 const SvmExtraSchema = S.Struct({
   feePayer: SvmAddress.SvmAddress,
+  memo: S.optional(S.String),
 })
 
-const getFeePayer = (data: unknown) =>
-  S.decodeUnknownEffect(SvmExtraSchema)(data).pipe(
-    Effect.map(({ feePayer }) => feePayer),
-    Effect.mapError((cause) => new CreatePayloadError({ cause })),
-  )
+const getExtra = (data: unknown) =>
+  S.decodeUnknownEffect(SvmExtraSchema)(data).pipe(Effect.mapError((cause) => new CreatePayloadError({ cause })))
 
 const RpcParsedMintSchema = S.Struct({
   type: S.Literal("mint"),
@@ -30,43 +33,42 @@ const RpcParsedMintSchema = S.Struct({
   }),
 })
 
-const fetchMintDetails = Effect.fnUntraced(
-  function* (connection: Connection, mint: PublicKey) {
-    const mintInfo = yield* Effect.tryPromise({
-      try: () => connection.getParsedAccountInfo(mint),
+const fetchMintDetails = Effect.fnUntraced(function* (connection: Connection, mint: PublicKey) {
+  // NOTE: we should probably cache these mint details using a RequestResolver (overengineering for now?)
+  // Right now we ask the rate-limited RPC for immutable data on every single transaction
+  const mintInfo = yield* Effect.tryPromise({
+    try: () => connection.getParsedAccountInfo(mint),
+    catch: (cause) => new CreatePayloadError({ cause }),
+  })
+
+  if (!mintInfo.value) {
+    return yield* new CreatePayloadError({ cause: "Mint not found" })
+  }
+
+  const accountData = mintInfo.value.data
+  let decimals: number
+
+  if ("parsed" in accountData) {
+    decimals = yield* S.decodeUnknownEffect(RpcParsedMintSchema)(accountData.parsed).pipe(
+      Effect.map(({ info }) => info.decimals),
+      Effect.mapError((cause) => new CreatePayloadError({ cause })),
+    )
+  } else {
+    decimals = yield* Effect.try({
+      try: () => MintLayout.decode(accountData).decimals,
       catch: (cause) => new CreatePayloadError({ cause }),
     })
+  }
 
-    if (!mintInfo.value) {
-      return yield* new CreatePayloadError({ cause: "Mint not found" })
-    }
-
-    const accountData = mintInfo.value.data
-    let decimals: number
-
-    if ("parsed" in accountData) {
-      decimals = yield* S.decodeUnknownEffect(RpcParsedMintSchema)(accountData.parsed).pipe(
-        Effect.map(({ info }) => info.decimals),
-        Effect.mapError((cause) => new CreatePayloadError({ cause })),
-      )
-    } else {
-      decimals = yield* Effect.try({
-        try: () => MintLayout.decode(accountData).decimals,
-        catch: (cause) => new CreatePayloadError({ cause }),
-      })
-    }
-
-    return {
-      decimals,
-      programId: mintInfo.value.owner,
-    }
-  },
-  Boundary.span("fetchMintDetails", import.meta.url),
-)
+  return {
+    decimals,
+    programId: mintInfo.value.owner,
+  }
+})
 
 export const make = Effect.fnUntraced(function* (signer: SvmSigner, requirement: typeof Requirements.Type) {
   // The Sponsor's (feePayer) address provided by the Facilitator to cover SOL network fees
-  const feePayer = yield* getFeePayer(requirement.extra)
+  const { feePayer, memo } = yield* getExtra(requirement.extra)
 
   // Public Solana RPC endpoints can be severely ratelimited
   // NOTE: we might need to support an array of RPC URLs to load balance between
@@ -109,10 +111,17 @@ export const make = Effect.fnUntraced(function* (signer: SvmSigner, requirement:
     [],
     tokenProgramId,
   )
+  const memoText = memo ?? crypto.randomUUID()
+  const memoInstruction = new TransactionInstruction({
+    keys: [],
+    programId: new PublicKey("MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr"),
+    data: Buffer.from(memoText, "utf-8"),
+  })
+
   const messageV0 = new TransactionMessage({
     payerKey: new PublicKey(feePayer),
     recentBlockhash: blockhash,
-    instructions: [transferInstruction],
+    instructions: [transferInstruction, memoInstruction],
   }).compileToV0Message()
 
   const tx = new VersionedTransaction(messageV0)
