@@ -17,7 +17,7 @@ import { CreatePayloadError } from "../errors.ts"
 import type { Requirements } from "../Requirements.ts"
 import * as SvmAddress from "./SvmAddress.ts"
 import * as SvmAsset from "./SvmAsset.ts"
-import type { SvmPayloadContext } from "./SvmContext.ts"
+import type { SvmPayloadContext } from "./SvmPayloadContext.ts"
 import type { SvmSigner } from "./SvmSigner.ts"
 
 export const SvmPayload = S.Struct({
@@ -47,7 +47,10 @@ export const make = Effect.fnUntraced(
       Effect.mapError((cause) => new CreatePayloadError({ cause })),
     )
 
-    const { decimals, tokenProgramId } = yield* context.getAssetMetadata(requirement)
+    const { decimals, tokenProgramId } = yield* context.getAssetMetadata({
+      network: requirement.network,
+      asset: mintAsset,
+    })
     const latestBlockhash = yield* context.getLatestBlockhash(requirement.network)
 
     const mint = address(mintAsset)

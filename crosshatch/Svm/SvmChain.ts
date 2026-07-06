@@ -2,7 +2,7 @@ import { Config, Effect } from "effect"
 
 import * as Chain from "../Chain.ts"
 import * as Mnemonic from "../Mnemonic.ts"
-import type { SvmPayloadContext } from "./SvmContext.ts"
+import type { SvmPayloadContext } from "./SvmPayloadContext.ts"
 import * as SvmPayload from "./SvmPayload.ts"
 import { fromSecretKey, getSecretKey, type SvmSigner } from "./SvmSigner.ts"
 

@@ -1,6 +1,6 @@
 export * as SvmAddress from "./SvmAddress.ts"
 export * as SvmAsset from "./SvmAsset.ts"
 export * as SvmChain from "./SvmChain.ts"
-export * as SvmContext from "./SvmContext.ts"
+export * as SvmPayloadContext from "./SvmPayloadContext.ts"
 export * as SvmPayload from "./SvmPayload.ts"
 export * as SvmSigner from "./SvmSigner.ts"
