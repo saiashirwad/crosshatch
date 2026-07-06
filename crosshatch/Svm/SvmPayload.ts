@@ -14,6 +14,7 @@ import { getBase64EncodedWireTransaction } from "@solana/transactions"
 import { Effect, Schema as S } from "effect"
 
 import { CreatePayloadError } from "../errors.ts"
+import type { Deployment } from "../PhysicalAsset.ts"
 import type { Requirements } from "../Requirements.ts"
 import * as SvmAddress from "./SvmAddress.ts"
 import * as SvmAsset from "./SvmAsset.ts"
@@ -40,14 +41,19 @@ const getExtra = (data: unknown) =>
   S.decodeUnknownEffect(SvmExtraSchema)(data).pipe(Effect.mapError((cause) => new CreatePayloadError({ cause })))
 
 export const make = Effect.fnUntraced(
-  function* (signer: SvmSigner, requirement: typeof Requirements.Type, context: SvmPayloadContext) {
+  function* (
+    signer: SvmSigner,
+    requirement: typeof Requirements.Type,
+    deployment: Deployment,
+    context: SvmPayloadContext,
+  ) {
     const { feePayer, memo } = yield* getExtra(requirement.extra)
 
     const mintAsset = yield* S.decodeUnknownEffect(SvmAsset.SvmAsset)(requirement.asset).pipe(
       Effect.mapError((cause) => new CreatePayloadError({ cause })),
     )
 
-    const { decimals, tokenProgramId } = yield* context.getAssetMetadata({
+    const { tokenProgramId } = yield* context.getAssetMetadata({
       network: requirement.network,
       asset: mintAsset,
     })
@@ -73,7 +79,7 @@ export const make = Effect.fnUntraced(
         destination: destAta,
         authority: signer.signer,
         amount,
-        decimals,
+        decimals: deployment.decimals,
       },
       { programAddress: tokenProgram },
     )

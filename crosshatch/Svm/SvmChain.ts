@@ -2,16 +2,16 @@ import { Config, Effect } from "effect"
 
 import * as Chain from "../Chain.ts"
 import * as Mnemonic from "../Mnemonic.ts"
-import type { SvmPayloadContext } from "./SvmPayloadContext.ts"
 import * as SvmPayload from "./SvmPayload.ts"
+import type { SvmPayloadContext } from "./SvmPayloadContext.ts"
 import { fromSecretKey, getSecretKey, type SvmSigner } from "./SvmSigner.ts"
 
 export class SvmChain extends Chain.Service<SvmChain>()("crosshatch/Svm/SvmChain") {}
 
 export const fromSigner = (signer: SvmSigner, context: SvmPayloadContext): Chain.Chain =>
   ({
-    createPayload: Effect.fnUntraced(function* ({ accepted, extensions }) {
-      const payload = yield* SvmPayload.make(signer, accepted, context)
+    createPayload: Effect.fnUntraced(function* ({ accepted, extensions, deployment }) {
+      const payload = yield* SvmPayload.make(signer, accepted, deployment, context)
       return {
         payload: {
           x402Version: 2,
