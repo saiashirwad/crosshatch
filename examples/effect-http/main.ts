@@ -1,4 +1,4 @@
-import { Facilitator, Required, Requirements, PaymentId, Http, KnownAsset } from "crosshatch"
+import { Facilitator, Required, Requirements, Http402, KnownAssets, PaymentIdExtension } from "crosshatch"
 import { EvmAddress } from "crosshatch/Evm"
 import { Layer, Effect } from "effect"
 import { Worker } from "effect-workerd"
@@ -9,30 +9,32 @@ export default Worker.make({
     "GET",
     "/paid",
     Effect.gen(function* () {
-      const payload = yield* Http.ResolvedPayload
+      const payload = yield* Http402.ResolvedPayload
       if (!payload) {
         const PAY_TO_EVM = yield* EvmAddress.config("PAY_TO_EVM")
-        const required = yield* Required.builder({
-          url: "https://example-merchant.com",
-        }).pipe(
-          Required.extend(PaymentId.PaymentIdExtension, {
+        const required = yield* Required.make`
+        |
+        | Description of the charge here.
+        |
+        | What is this charge for?
+        |
+        | How does it fit into the current flow?
+        |
+        `.pipe(
+          Required.extend(PaymentIdExtension, {
             required: true,
           }),
           Required.accept(
-            Requirements.group(KnownAsset.USDC, {
+            Requirements.group(KnownAssets.USDC, {
               amount: 0.01,
               recipients: { eip155: { 8453: PAY_TO_EVM } },
             }),
           ),
-        )`
-        | Description of the charge here.
-        | What is this charge for?
-        | How does it fit into the current flow?
-        `
-        return yield* Http.require({ required })
+        )
+        return yield* Http402.require({ required })
       }
       const settlement = yield* Facilitator.settle({ payload })
-      return yield* HttpServerResponse.text("The paid resource.").pipe(Http.addSettlement(settlement))
+      return yield* HttpServerResponse.text("The paid resource.").pipe(Http402.addResponseHeader(settlement))
     }),
   ).pipe(
     Layer.provide([
@@ -40,9 +42,11 @@ export default Worker.make({
         allowedHeaders: ["*"],
         allowedMethods: ["*"],
         allowedOrigins: ["*"],
-        exposedHeaders: Http.EXPOSED_HEADERS,
+        exposedHeaders: Http402.EXPOSED_HEADERS,
       }),
-      Http.layerMiddleware,
+      Http402.layerMiddleware({
+        extensions: [PaymentIdExtension],
+      }),
     ]),
     HttpRouter.toHttpEffect,
     Effect.flatten,
