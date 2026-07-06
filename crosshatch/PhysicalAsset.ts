@@ -17,4 +17,10 @@ export interface Deployment {
   readonly name: string
   readonly version: string
   readonly service: Context.ServiceClass<any, any, Chain>
+  /**
+   * Chain-specific deployment metadata
+   *
+   * eg: tokenProgramId in SVM
+   **/
+  readonly metadata?: unknown
 }

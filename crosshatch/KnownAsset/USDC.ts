@@ -1,5 +1,6 @@
 import { EvmChain, EvmAsset } from "../Evm/Evm.ts"
 import { type PhysicalAsset } from "../PhysicalAsset.ts"
+import { SvmAddress, SvmAsset, SvmChain } from "../Svm/Svm.ts"
 
 export const USDC = {
   peg: "USD",
@@ -61,6 +62,28 @@ export const USDC = {
         name: "USDC",
         version: "2",
         service: EvmChain.EvmChain,
+      },
+    },
+    solana: {
+      "5eykt4UsFv8P8NJdTREpY1vzQKqZKvdp": {
+        asset: SvmAsset.SvmAsset.make("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"),
+        decimals: 6,
+        name: "USD Coin",
+        version: "1",
+        service: SvmChain.SvmChain,
+        metadata: {
+          tokenProgramId: SvmAddress.SvmAddress.make("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"),
+        },
+      },
+      EtWTRABZaYq6iMfeYKouRu166VU2xqa1: {
+        asset: SvmAsset.SvmAsset.make("4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU"),
+        decimals: 6,
+        name: "USD Coin",
+        version: "1",
+        service: SvmChain.SvmChain,
+        metadata: {
+          tokenProgramId: SvmAddress.SvmAddress.make("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"),
+        },
       },
     },
   },
