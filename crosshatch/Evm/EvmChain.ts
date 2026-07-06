@@ -12,9 +12,12 @@ export class EvmChain extends Chain.Service<EvmChain>()("crosshatch/Evm/EvmChain
 // TODO: extensions
 export const fromSigner = (signer: EvmSigner): Chain.Chain =>
   ({
-    createPayload: Effect.fnUntraced(function* ({ accepted, extensions }) {
+    createPayload: Effect.fnUntraced(function* ({ accepted, extensions, deployment }) {
       const method = accepted.extra?.assetTransferMethod ?? "eip3009"
-      const payload = yield* (method === "permit2" ? Permit2Payload.make : Erc3009Payload.make)(signer, accepted)
+      // const payload = yield* (method === "permit2" ? Permit2Payload.make : Erc3009Payload.make)(signer, accepted)
+      const payload = yield* method === "permit2"
+        ? Permit2Payload.make(signer, accepted)
+        : Erc3009Payload.make(signer, accepted, deployment)
       return {
         payload: {
           x402Version: 2,

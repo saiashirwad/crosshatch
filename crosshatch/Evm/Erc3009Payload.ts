@@ -1,7 +1,7 @@
 import { Effect, Schema as S } from "effect"
 import { getAddress, toHex } from "viem"
 
-import { CreatePayloadError } from "../errors.ts"
+import type { Deployment } from "../PhysicalAsset.ts"
 import { Requirements } from "../Requirements.ts"
 import type { EvmSigner } from "./EvmSigner.ts"
 
@@ -30,11 +30,11 @@ const authorizationTypes = {
   ],
 } as const
 
-export const make = Effect.fnUntraced(function* (signer: EvmSigner, requirement: typeof Requirements.Type) {
-  if (!requirement.extra?.name || !requirement.extra?.version) {
-    // TODO: inner schema error
-    return yield* new CreatePayloadError({})
-  }
+export const make = Effect.fnUntraced(function* (
+  signer: EvmSigner,
+  requirement: typeof Requirements.Type,
+  deployment: Deployment,
+) {
   const now = Math.floor(Date.now() / 1000)
   const chainId = parseInt(requirement.network.split(":")[1]!)
   const authorization: typeof Erc3009Authorization.Type = {
@@ -48,10 +48,10 @@ export const make = Effect.fnUntraced(function* (signer: EvmSigner, requirement:
   const signature = yield* Effect.promise(() =>
     signer.signTypedData({
       domain: {
-        name: requirement.extra?.name,
-        version: requirement.extra?.version,
+        name: deployment.name,
+        version: deployment.version,
         chainId,
-        verifyingContract: getAddress(requirement.asset),
+        verifyingContract: getAddress(deployment.asset),
       },
       types: authorizationTypes,
       primaryType: "TransferWithAuthorization",
