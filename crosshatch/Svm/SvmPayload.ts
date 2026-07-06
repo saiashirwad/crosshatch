@@ -11,7 +11,7 @@ import {
 } from "@solana/kit"
 import { partiallySignTransactionMessageWithSigners } from "@solana/signers"
 import { getBase64EncodedWireTransaction } from "@solana/transactions"
-import { Effect, Schema as S } from "effect"
+import { Effect, flow, Schema as S } from "effect"
 
 import { CreatePayloadError } from "../errors.ts"
 import type { Deployment } from "../PhysicalAsset.ts"
@@ -37,8 +37,19 @@ const SvmExtraSchema = S.Struct({
   memo: S.optional(S.String.pipe(S.refine((s): s is string => utf8ByteLength(s) <= 256))),
 })
 
-const getExtra = (data: unknown) =>
-  S.decodeUnknownEffect(SvmExtraSchema)(data).pipe(Effect.mapError((cause) => new CreatePayloadError({ cause })))
+const getExtra = flow(
+  S.decodeUnknownEffect(SvmExtraSchema),
+  Effect.mapError((cause) => new CreatePayloadError({ cause })),
+)
+
+const SvmDeploymentMetadata = S.Struct({
+  tokenProgramId: SvmAddress.SvmAddress,
+})
+
+const getDeploymentMetadata = flow(
+  S.decodeUnknownEffect(SvmDeploymentMetadata),
+  Effect.mapError((cause) => new CreatePayloadError({ cause })),
+)
 
 export const make = Effect.fnUntraced(
   function* (
@@ -53,10 +64,7 @@ export const make = Effect.fnUntraced(
       Effect.mapError((cause) => new CreatePayloadError({ cause })),
     )
 
-    const { tokenProgramId } = yield* context.getAssetMetadata({
-      network: requirement.network,
-      asset: mintAsset,
-    })
+    const { tokenProgramId } = yield* getDeploymentMetadata(deployment.metadata)
     const latestBlockhash = yield* context.getLatestBlockhash(requirement.network)
 
     const mint = address(mintAsset)
