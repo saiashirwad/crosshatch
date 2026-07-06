@@ -2,15 +2,16 @@ import { Config, Effect } from "effect"
 
 import * as Chain from "../Chain.ts"
 import * as Mnemonic from "../Mnemonic.ts"
+import type { SvmPayloadContext } from "./SvmContext.ts"
 import * as SvmPayload from "./SvmPayload.ts"
 import { fromSecretKey, getSecretKey, type SvmSigner } from "./SvmSigner.ts"
 
 export class SvmChain extends Chain.Service<SvmChain>()("crosshatch/Svm/SvmChain") {}
 
-export const fromSigner = (signer: SvmSigner): Chain.Chain =>
+export const fromSigner = (signer: SvmSigner, context: SvmPayloadContext): Chain.Chain =>
   ({
     createPayload: Effect.fnUntraced(function* ({ accepted, extensions }) {
-      const payload = yield* SvmPayload.make(signer, accepted)
+      const payload = yield* SvmPayload.make(signer, accepted, context)
       return {
         payload: {
           x402Version: 2,
@@ -22,8 +23,10 @@ export const fromSigner = (signer: SvmSigner): Chain.Chain =>
     }),
   }) satisfies Chain.Chain
 
-export const fromMnemonic = (mnemonic: typeof Mnemonic.MnemonicRedacted.Type) =>
-  Effect.promise(() => fromSecretKey(getSecretKey(mnemonic))).pipe(Effect.map(fromSigner))
+export const fromMnemonic = (mnemonic: typeof Mnemonic.MnemonicRedacted.Type, context: SvmPayloadContext) =>
+  Effect.promise(() => fromSecretKey(getSecretKey(mnemonic))).pipe(Effect.map((signer) => fromSigner(signer, context)))
 
-export const fromMnemonicConfig = (mnemonicConfig: Config.Config<typeof Mnemonic.MnemonicRedacted.Type>) =>
-  mnemonicConfig.pipe(Effect.flatMap(fromMnemonic))
+export const fromMnemonicConfig = (
+  mnemonicConfig: Config.Config<typeof Mnemonic.MnemonicRedacted.Type>,
+  context: SvmPayloadContext,
+) => mnemonicConfig.pipe(Effect.flatMap((mnemonic) => fromMnemonic(mnemonic, context)))

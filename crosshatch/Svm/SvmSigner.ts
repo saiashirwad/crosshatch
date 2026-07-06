@@ -37,3 +37,4 @@ export const fromMnemonic = async (mnemonic: typeof MnemonicRedacted.Type) => {
   const address = await getAddressFromPublicKey(keyPair.publicKey)
   return S.decodeUnknownSync(SvmAddress)(address)
 }
+

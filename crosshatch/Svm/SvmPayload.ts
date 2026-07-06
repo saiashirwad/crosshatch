@@ -1,6 +1,6 @@
 import { getSetComputeUnitLimitInstruction, getSetComputeUnitPriceInstruction } from "@solana-program/compute-budget"
 import { getAddMemoInstruction } from "@solana-program/memo"
-import { fetchMaybeMint, findAssociatedTokenPda, getTransferCheckedInstruction } from "@solana-program/token"
+import { findAssociatedTokenPda, getTransferCheckedInstruction } from "@solana-program/token"
 import { address } from "@solana/addresses"
 import {
   appendTransactionMessageInstructions,
@@ -9,15 +9,15 @@ import {
   setTransactionMessageFeePayer,
   setTransactionMessageLifetimeUsingBlockhash,
 } from "@solana/kit"
-import { createSolanaRpc } from "@solana/rpc"
 import { partiallySignTransactionMessageWithSigners } from "@solana/signers"
 import { getBase64EncodedWireTransaction } from "@solana/transactions"
-import { Config, Effect, Schema as S } from "effect"
+import { Effect, Schema as S } from "effect"
 
 import { CreatePayloadError } from "../errors.ts"
 import type { Requirements } from "../Requirements.ts"
 import * as SvmAddress from "./SvmAddress.ts"
 import * as SvmAsset from "./SvmAsset.ts"
+import type { SvmPayloadContext } from "./SvmContext.ts"
 import type { SvmSigner } from "./SvmSigner.ts"
 
 export const SvmPayload = S.Struct({
@@ -39,51 +39,29 @@ const SvmExtraSchema = S.Struct({
 const getExtra = (data: unknown) =>
   S.decodeUnknownEffect(SvmExtraSchema)(data).pipe(Effect.mapError((cause) => new CreatePayloadError({ cause })))
 
-const fetchMintDetails = Effect.fnUntraced(
-  function* (rpc: ReturnType<typeof createSolanaRpc>, mint: typeof SvmAsset.SvmAsset.Type) {
-    const mintAccount = yield* Effect.promise(() => fetchMaybeMint(rpc, address(mint)))
-
-    if (!mintAccount.exists) {
-      return yield* new CreatePayloadError({ cause: "Mint not found" })
-    }
-
-    return {
-      decimals: mintAccount.data.decimals,
-      tokenProgramId: mintAccount.programAddress,
-    }
-  },
-  Effect.mapError((cause) => new CreatePayloadError({ cause })),
-)
-
 export const make = Effect.fnUntraced(
-  function* (signer: SvmSigner, requirement: typeof Requirements.Type) {
+  function* (signer: SvmSigner, requirement: typeof Requirements.Type, context: SvmPayloadContext) {
     const { feePayer, memo } = yield* getExtra(requirement.extra)
-
-    const rpcEndpoint = yield* Config.string("SVM_RPC_ENDPOINT").pipe(
-      Config.withDefault("https://api.mainnet.solana.com"),
-      Effect.mapError((cause) => new CreatePayloadError({ cause })),
-    )
-    const rpc = createSolanaRpc(rpcEndpoint)
 
     const mintAsset = yield* S.decodeUnknownEffect(SvmAsset.SvmAsset)(requirement.asset).pipe(
       Effect.mapError((cause) => new CreatePayloadError({ cause })),
     )
+
+    const { decimals, tokenProgramId } = yield* context.getAssetMetadata(requirement)
+    const latestBlockhash = yield* context.getLatestBlockhash(requirement.network)
+
     const mint = address(mintAsset)
-
-    const { decimals, tokenProgramId } = yield* fetchMintDetails(rpc, mintAsset)
-
     const owner = address(signer.address)
     const dest = address(requirement.payTo)
     const amount = BigInt(requirement.amount)
+    const tokenProgram = address(tokenProgramId)
 
     const [[sourceAta], [destAta]] = yield* Effect.tryPromise(() =>
       Promise.all([
-        findAssociatedTokenPda({ owner, mint, tokenProgram: tokenProgramId }),
-        findAssociatedTokenPda({ owner: dest, mint, tokenProgram: tokenProgramId }),
+        findAssociatedTokenPda({ owner, mint, tokenProgram }),
+        findAssociatedTokenPda({ owner: dest, mint, tokenProgram }),
       ]),
     )
-
-    const { value: latestBlockhash } = yield* Effect.promise(() => rpc.getLatestBlockhash().send())
 
     const transferInstruction = getTransferCheckedInstruction(
       {
@@ -94,9 +72,7 @@ export const make = Effect.fnUntraced(
         amount,
         decimals,
       },
-      {
-        programAddress: tokenProgramId,
-      },
+      { programAddress: tokenProgram },
     )
 
     const memoText = memo ?? randomNonce()
