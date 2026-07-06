@@ -25,7 +25,7 @@ export const group = Effect.fnUntraced(function* <A extends PhysicalAsset>(
   }: {
     readonly amount: Amount.Input
     readonly recipients: {
-      readonly [K in keyof A["deployments"]]: {
+      readonly [K in keyof A["deployments"]]?: {
         readonly [K2 in keyof A["deployments"][K]]+?: typeof Address.Type | undefined
       }
     }
@@ -35,23 +35,25 @@ export const group = Effect.fnUntraced(function* <A extends PhysicalAsset>(
   const maxTimeoutSeconds = ttl ? Math.ceil(Duration.fromInputUnsafe(ttl).pipe(Duration.toSeconds)) : 300
   const nominal = yield* Amount.from(amount)
   return Record.toEntries(recipients).flatMap(([namespace, references]) =>
-    Record.toEntries(references).reduce(
-      (acc, [reference, payTo]) => {
-        const deployment = asset.deployments[namespace]![reference]!
-        const { name, version } = deployment
-        return payTo
-          ? acc.concat({
-              amount: Amount.toAtomic(nominal, deployment),
-              asset: Asset.make(deployment.asset),
-              maxTimeoutSeconds,
-              network: ChainId.make(`${namespace}:${reference}`),
-              payTo,
-              scheme: "exact",
-              extra: { name, version },
-            })
-          : acc
-      },
-      [] as ReadonlyArray<typeof Requirements.Type>,
-    ),
+    references
+      ? Record.toEntries(references).reduce(
+          (acc, [reference, payTo]) => {
+            const deployment = asset.deployments[namespace]![reference]!
+            const { name, version } = deployment
+            return payTo
+              ? acc.concat({
+                  amount: Amount.toAtomic(nominal, deployment),
+                  asset: Asset.make(deployment.asset),
+                  maxTimeoutSeconds,
+                  network: ChainId.make(`${namespace}:${reference}`),
+                  payTo,
+                  scheme: "exact",
+                  extra: { name, version },
+                })
+              : acc
+          },
+          [] as ReadonlyArray<typeof Requirements.Type>,
+        )
+      : [],
   )
 })
