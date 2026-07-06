@@ -2,14 +2,17 @@ import { type Effect, Context } from "effect"
 
 import type { CreatePayloadError } from "./errors.ts"
 import type { Payload } from "./Payload.ts"
+import type { Deployment } from "./PhysicalAsset.ts"
 import type { Requirements } from "./Requirements.ts"
 
 export interface Chain {
   readonly createPayload: ({
     accepted,
     extensions,
+    deployment,
   }: {
     readonly accepted: typeof Requirements.Type
+    readonly deployment: Deployment
     readonly extensions?: Record<string, unknown> | undefined
   }) => Effect.Effect<
     {

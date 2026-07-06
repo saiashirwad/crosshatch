@@ -32,6 +32,7 @@ describe(import.meta.url, () => {
       const chain = EvmChain.fromMnemonic(seed)
       const { payload: paymentPayload } = yield* chain.createPayload({
         accepted: paymentRequirements,
+        deployment: KnownAsset.USDC.deployments.eip155[8453],
       })
       const client = yield* HttpApiClient.make(Facilitator.FacilitatorApi)
       const verified = yield* client.facilitator.verify({

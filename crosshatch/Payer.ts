@@ -29,8 +29,8 @@ export const layer = (chain: Chain) =>
       const { select } = yield* Treasurer
       return {
         createPayload: Effect.fnUntraced(function* ({ required }) {
-          const { config } = yield* select(required)
-          return yield* chain.createPayload(config)
+          const { config, deployment } = yield* select(required)
+          return yield* chain.createPayload({ ...config, deployment })
         }),
       }
     }),
