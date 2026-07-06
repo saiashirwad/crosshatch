@@ -1,5 +1,3 @@
-import { getAddressFromPublicKey } from "@solana/addresses"
-import { createKeyPairFromBytes } from "@solana/keys"
 import { createKeyPairSignerFromBytes, type KeyPairSigner } from "@solana/signers"
 import { derivePath } from "ed25519-hd-key"
 import { Redacted, Schema as S } from "effect"
@@ -30,11 +28,3 @@ export const getSecretKey = (mnemonic: typeof MnemonicRedacted.Type) => {
   secretKey.set(publicKey, 32)
   return secretKey
 }
-
-export const fromMnemonic = async (mnemonic: typeof MnemonicRedacted.Type) => {
-  const secretKey = getSecretKey(mnemonic)
-  const keyPair = await createKeyPairFromBytes(secretKey)
-  const address = await getAddressFromPublicKey(keyPair.publicKey)
-  return S.decodeUnknownSync(SvmAddress)(address)
-}
-
