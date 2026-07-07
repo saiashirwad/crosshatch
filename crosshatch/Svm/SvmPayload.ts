@@ -11,9 +11,9 @@ import {
 } from "@solana/kit"
 import { partiallySignTransactionMessageWithSigners } from "@solana/signers"
 import { getBase64EncodedWireTransaction } from "@solana/transactions"
-import { Effect, flow, Schema as S } from "effect"
+import { Effect, Schema as S } from "effect"
 
-import { CreatePayloadError } from "../errors.ts"
+import { CreatePayloadError } from "../Payer.ts"
 import type { Deployment } from "../PhysicalAsset.ts"
 import type { Requirements } from "../Requirements.ts"
 import * as SvmAddress from "./SvmAddress.ts"
@@ -37,84 +37,81 @@ const SvmExtraSchema = S.Struct({
   memo: S.optional(S.String.pipe(S.refine((s): s is string => utf8ByteLength(s) <= 256))),
 })
 
-const getExtra = flow(
-  S.decodeUnknownEffect(SvmExtraSchema),
-  Effect.mapError((cause) => new CreatePayloadError({ cause })),
-)
-
 const SvmDeploymentMetadata = S.Struct({
   tokenProgramId: SvmAddress.SvmAddress,
 })
 
-const getDeploymentMetadata = flow(
-  S.decodeUnknownEffect(SvmDeploymentMetadata),
-  Effect.mapError((cause) => new CreatePayloadError({ cause })),
-)
+const getExtra = (input: unknown): Effect.Effect<typeof SvmExtraSchema.Type, CreatePayloadError> =>
+  S.decodeUnknownEffect(SvmExtraSchema)(input).pipe(Effect.mapError((cause) => new CreatePayloadError({ cause })))
 
-export const make = Effect.fnUntraced(
-  function* (
-    signer: SvmSigner,
-    requirement: typeof Requirements.Type,
-    deployment: Deployment,
-    context: SvmPayloadContext,
-  ) {
-    const { feePayer, memo } = yield* getExtra(requirement.extra)
+const getMintAsset = (input: unknown): Effect.Effect<typeof SvmAsset.SvmAsset.Type, CreatePayloadError> =>
+  S.decodeUnknownEffect(SvmAsset.SvmAsset)(input).pipe(Effect.mapError((cause) => new CreatePayloadError({ cause })))
 
-    const mintAsset = yield* S.decodeUnknownEffect(SvmAsset.SvmAsset)(requirement.asset).pipe(
-      Effect.mapError((cause) => new CreatePayloadError({ cause })),
-    )
+const getDeploymentMetadata = (input: unknown): Effect.Effect<typeof SvmDeploymentMetadata.Type, CreatePayloadError> =>
+  S.decodeUnknownEffect(SvmDeploymentMetadata)(input).pipe(Effect.mapError((cause) => new CreatePayloadError({ cause })))
 
-    const { tokenProgramId } = yield* getDeploymentMetadata(deployment.metadata)
-    const latestBlockhash = yield* context.getLatestBlockhash(requirement.network)
+export const make = Effect.fnUntraced(function* (
+  signer: SvmSigner,
+  requirement: typeof Requirements.Type,
+  deployment: Deployment,
+  context: SvmPayloadContext,
+) {
+  const { feePayer, memo } = yield* getExtra(requirement.extra)
 
-    const mint = address(mintAsset)
-    const owner = address(signer.address)
-    const dest = address(requirement.payTo)
-    const amount = BigInt(requirement.amount)
-    const tokenProgram = address(tokenProgramId)
+  const mintAsset = yield* getMintAsset(requirement.asset)
 
-    const [[sourceAta], [destAta]] = yield* Effect.tryPromise(() =>
+  const { tokenProgramId } = yield* getDeploymentMetadata(deployment.metadata)
+  const latestBlockhash = yield* context.getLatestBlockhash(requirement.network)
+
+  const mint = address(mintAsset)
+  const owner = address(signer.address)
+  const dest = address(requirement.payTo)
+  const amount = BigInt(requirement.amount)
+  const tokenProgram = address(tokenProgramId)
+
+  const [[sourceAta], [destAta]] = yield* Effect.tryPromise({
+    try: () =>
       Promise.all([
         findAssociatedTokenPda({ owner, mint, tokenProgram }),
         findAssociatedTokenPda({ owner: dest, mint, tokenProgram }),
       ]),
-    )
+    catch: (cause) => new CreatePayloadError({ cause }),
+  })
 
-    const transferInstruction = getTransferCheckedInstruction(
-      {
-        source: sourceAta,
-        mint,
-        destination: destAta,
-        authority: signer.signer,
-        amount,
-        decimals: deployment.decimals,
-      },
-      { programAddress: tokenProgram },
-    )
+  const transferInstruction = getTransferCheckedInstruction(
+    {
+      source: sourceAta,
+      mint,
+      destination: destAta,
+      authority: signer.signer,
+      amount,
+      decimals: deployment.decimals,
+    },
+    { programAddress: tokenProgram },
+  )
 
-    const memoText = memo ?? randomNonce()
-    const memoInstruction = getAddMemoInstruction({ memo: memoText })
+  const memoText = memo ?? randomNonce()
+  const memoInstruction = getAddMemoInstruction({ memo: memoText })
 
-    const limitInstruction = getSetComputeUnitLimitInstruction({ units: 100_000 })
-    const priceInstruction = getSetComputeUnitPriceInstruction({ microLamports: 100_000n })
+  const limitInstruction = getSetComputeUnitLimitInstruction({ units: 100_000 })
+  const priceInstruction = getSetComputeUnitPriceInstruction({ microLamports: 100_000n })
 
-    const transactionMessage = pipe(
-      createTransactionMessage({ version: 0 }),
-      (m) => setTransactionMessageFeePayer(address(feePayer), m),
-      (m) => setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, m),
-      (m) =>
-        appendTransactionMessageInstructions(
-          [limitInstruction, priceInstruction, transferInstruction, memoInstruction],
-          m,
-        ),
-    )
+  const transactionMessage = pipe(
+    createTransactionMessage({ version: 0 }),
+    (m) => setTransactionMessageFeePayer(address(feePayer), m),
+    (m) => setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, m),
+    (m) =>
+      appendTransactionMessageInstructions(
+        [limitInstruction, priceInstruction, transferInstruction, memoInstruction],
+        m,
+      ),
+  )
 
-    const signedTransaction = yield* Effect.promise(() =>
-      partiallySignTransactionMessageWithSigners(transactionMessage),
-    )
+  const signedTransaction = yield* Effect.tryPromise({
+    try: () => partiallySignTransactionMessageWithSigners(transactionMessage),
+    catch: (cause) => new CreatePayloadError({ cause }),
+  })
 
-    const transaction = getBase64EncodedWireTransaction(signedTransaction)
-    return { transaction } satisfies typeof SvmPayload.Type
-  },
-  Effect.mapError((cause) => new CreatePayloadError({ cause })),
-)
+  const transaction = getBase64EncodedWireTransaction(signedTransaction)
+  return { transaction } satisfies typeof SvmPayload.Type
+})

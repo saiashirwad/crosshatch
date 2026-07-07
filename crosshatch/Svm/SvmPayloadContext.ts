@@ -2,7 +2,7 @@ import type { Blockhash } from "@solana/rpc-types"
 import type { Effect } from "effect"
 
 import type { ChainId } from "../ChainId.ts"
-import type { CreatePayloadError } from "../errors.ts"
+import type { CreatePayloadError } from "../Payer.ts"
 
 export interface SvmLatestBlockhash {
   readonly blockhash: Blockhash

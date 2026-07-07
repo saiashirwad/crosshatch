@@ -1,4 +1,4 @@
-import { Facilitator, Required, Requirements, PaymentId, HttpServer402, KnownAsset } from "crosshatch"
+import { Facilitator, Required, Requirements, Http402, KnownAssets, PaymentIdExtension } from "crosshatch"
 import { EvmAddress } from "crosshatch/Evm"
 import { Layer, Effect } from "effect"
 import { Worker } from "effect-workerd"
@@ -9,33 +9,32 @@ export default Worker.make({
     "GET",
     "/paid",
     Effect.gen(function* () {
-      const payload = yield* HttpServer402.Payload402
+      const payload = yield* Http402.ResolvedPayload
       if (!payload) {
-        const required = yield* Required.builder({
-          url: "https://example-merchant.com",
-        }).pipe(
-          Required.extend(PaymentId.PaymentIdExtension, {
+        const PAY_TO_EVM = yield* EvmAddress.config("PAY_TO_EVM")
+        const required = yield* Required.make`
+        |
+        | Description of the charge here.
+        |
+        | What is this charge for?
+        |
+        | How does it fit into the current flow?
+        |
+        `.pipe(
+          Required.extend(PaymentIdExtension, {
             required: true,
           }),
           Required.accept(
-            Requirements.group(KnownAsset.USDC, {
+            Requirements.group(KnownAssets.USDC, {
               amount: 0.01,
-              recipients: {
-                eip155: {
-                  8453: yield* EvmAddress.config("PAY_TO_EVM"),
-                },
-              },
+              recipients: { eip155: { 8453: PAY_TO_EVM } },
             }),
           ),
-        )`
-        | Description of the charge here.
-        | What is this charge for?
-        | How does it fit into the current flow?
-        `
-        return yield* HttpServer402.require({ required })
+        )
+        return yield* Http402.require({ required })
       }
-      yield* Facilitator.settle({ payload })
-      return HttpServerResponse.text("The paid resource.")
+      const settlement = yield* Facilitator.settle({ payload })
+      return yield* HttpServerResponse.text("The paid resource.").pipe(Http402.addResponseHeader(settlement))
     }),
   ).pipe(
     Layer.provide([
@@ -43,9 +42,11 @@ export default Worker.make({
         allowedHeaders: ["*"],
         allowedMethods: ["*"],
         allowedOrigins: ["*"],
-        exposedHeaders: HttpServer402.EXPOSED_HEADERS,
+        exposedHeaders: Http402.EXPOSED_HEADERS,
       }),
-      HttpServer402.layer,
+      Http402.layerMiddleware({
+        extensions: [PaymentIdExtension],
+      }),
     ]),
     HttpRouter.toHttpEffect,
     Effect.flatten,

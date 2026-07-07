@@ -18,6 +18,11 @@ export default Alchemy.Stack(
     const CROSSHATCH_STAGE = yield* Alchemy.Stage
     const { url } = yield* Cloudflare.Worker("Entry", {
       ...base,
+      dev: {
+        host: "127.0.0.1",
+        port: 1337,
+        strictPort: true,
+      },
       main: "main.ts",
       env: {
         CROSSHATCH_STAGE,

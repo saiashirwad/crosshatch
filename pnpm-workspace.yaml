@@ -7,6 +7,7 @@ packages:
   - liminal/*
   - liminal/examples/*
   - liminal/examples/*/*
+  - otel
 
 catalog:
   "@changesets/changelog-github": ^0.7.0
@@ -15,7 +16,7 @@ catalog:
   "@cloudflare/vitest-pool-workers": ^0.14.7
   "@cloudflare/worker-bundler": ^0.1.2
   "@cloudflare/workers-types": ^4.20260414.1
-  "@distilled.cloud/coinbase": ^0.27.0
+  "@distilled.cloud/coinbase": ^0.28.1
   "@effect/ai-openai-compat": 4.0.0-beta.90
   "@effect/atom-react": 4.0.0-beta.90
   "@effect/language-service": 0.86.2
@@ -53,7 +54,6 @@ catalog:
   "@tanstack/react-router-devtools": ^1.159.4
   "@tanstack/router-core": ^1.141.1
   "@tanstack/router-plugin": ^1.159.4
-  "@testcontainers/postgresql": ^11.11.0
   "@types/node": ^25.6.0
   "@types/react": ^19.2.11
   "@types/react-dom": ^19.2.3
@@ -65,7 +65,7 @@ catalog:
   "@x402/core": ^2.3.0
   "@x402/evm": ^2.0.0
   "@x402/svm": ^2.0.0
-  alchemy: https://pkg.ing/alchemy/62f05d3
+  alchemy: 2.0.0-beta.60
   asciify-engine: ^1.0.118
   babel-plugin-react-compiler: ^1.0.0
   class-variance-authority: ^0.7.1

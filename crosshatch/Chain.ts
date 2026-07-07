@@ -1,25 +1,17 @@
 import { type Effect, Context } from "effect"
 
-import type { CreatePayloadError } from "./errors.ts"
+import type { ExtensionsInfo } from "./Extension.ts"
+import type { CreatePayloadError } from "./Payer.ts"
 import type { Payload } from "./Payload.ts"
 import type { Deployment } from "./PhysicalAsset.ts"
 import type { Requirements } from "./Requirements.ts"
 
 export interface Chain {
-  readonly createPayload: ({
-    accepted,
-    extensions,
-    deployment,
-  }: {
+  readonly createPayload: (config: {
     readonly accepted: typeof Requirements.Type
     readonly deployment: Deployment
-    readonly extensions?: Record<string, unknown> | undefined
-  }) => Effect.Effect<
-    {
-      readonly payload: typeof Payload.Type
-    },
-    CreatePayloadError
-  >
+    readonly extensions?: typeof ExtensionsInfo.Type | undefined
+  }) => Effect.Effect<{ readonly payload: typeof Payload.Type }, CreatePayloadError>
 }
 
 // TODO: model as true service subclass
