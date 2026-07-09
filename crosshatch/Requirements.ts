@@ -3,9 +3,8 @@ import { Effect, Schema as S, Record, Duration } from "effect"
 import { Address } from "./Address.ts"
 import * as Amount from "./Amount.ts"
 import type { InvalidAmountError } from "./Amount.ts"
-import { Asset } from "./Asset.ts"
+import { Asset, type PhysicalAsset } from "./Asset.ts"
 import { ChainId } from "./ChainId.ts"
-import type { PhysicalAsset } from "./PhysicalAsset.ts"
 
 export const Requirements = S.Struct({
   amount: Amount.Atomic,
@@ -23,7 +22,7 @@ export type RequirementsLike =
   | Array<typeof Requirements.Type>
   | Effect.Effect<Array<typeof Requirements.Type>, InvalidAmountError>
 
-export const group = Effect.fnUntraced(function* <A extends PhysicalAsset>(
+export const asset = Effect.fnUntraced(function* <A extends PhysicalAsset>(
   asset: A,
   {
     amount,

@@ -1,5 +1,5 @@
-import { EvmChain, EvmAsset } from "../Evm/Evm.ts"
-import { type PhysicalAsset } from "../PhysicalAsset.ts"
+import { type PhysicalAsset } from "../Asset.ts"
+import { EvmAsset, Erc3009, Permit2 } from "../Evm/Evm.ts"
 
 export const SBC = {
   peg: "USD",
@@ -11,14 +11,7 @@ export const SBC = {
         decimals: 6,
         name: "Stable Coin",
         version: "1",
-        service: EvmChain.EvmChain,
-      },
-      72344: {
-        asset: EvmAsset.EvmAsset.make("0x33ad9e4BD16B69B5BFdED37D8B5D9fF9aba014Fb"),
-        decimals: 6,
-        name: "Stable Coin",
-        version: "1",
-        service: EvmChain.EvmChain,
+        adapters: [Erc3009.Erc3009Adapter, Permit2.Permit2Adapter],
       },
     },
   },

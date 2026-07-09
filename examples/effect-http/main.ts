@@ -1,5 +1,6 @@
-import { Facilitator, Required, Requirements, Http402, KnownAssets, PaymentIdExtension } from "crosshatch"
+import { Facilitator, Required, Requirements, Http402, KnownAssets } from "crosshatch"
 import { EvmAddress } from "crosshatch/Evm"
+import { PaymentId } from "crosshatch/Extensions"
 import { Layer, Effect } from "effect"
 import { Worker } from "effect-workerd"
 import { HttpRouter, HttpServerResponse } from "effect/unstable/http"
@@ -21,11 +22,11 @@ export default Worker.make({
         | How does it fit into the current flow?
         |
         `.pipe(
-          Required.extend(PaymentIdExtension, {
+          Required.extend(PaymentId.PaymentIdExtension, {
             required: true,
           }),
           Required.accept(
-            Requirements.group(KnownAssets.USDC, {
+            Requirements.asset(KnownAssets.USDC, {
               amount: 0.01,
               recipients: { eip155: { 8453: PAY_TO_EVM } },
             }),
@@ -45,7 +46,7 @@ export default Worker.make({
         exposedHeaders: Http402.EXPOSED_HEADERS,
       }),
       Http402.layerMiddleware({
-        extensions: [PaymentIdExtension],
+        extensions: [PaymentId.PaymentIdExtension],
       }),
     ]),
     HttpRouter.toHttpEffect,

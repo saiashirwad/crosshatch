@@ -1,5 +1,5 @@
-import { EvmChain, EvmAsset } from "../Evm/Evm.ts"
-import { type PhysicalAsset } from "../PhysicalAsset.ts"
+import { type PhysicalAsset } from "../Asset.ts"
+import { EvmAsset, Erc3009, Permit2 } from "../Evm/Evm.ts"
 
 export const MUSD = {
   peg: "USD",
@@ -11,14 +11,7 @@ export const MUSD = {
         decimals: 18,
         name: "Mezo USD",
         version: "1",
-        service: EvmChain.EvmChain,
-      },
-      31611: {
-        asset: EvmAsset.EvmAsset.make("0x118917a40FAF1CD7a13dB0Ef56C86De7973Ac503"),
-        decimals: 18,
-        name: "Mezo USD",
-        version: "1",
-        service: EvmChain.EvmChain,
+        adapters: [Erc3009.Erc3009Adapter, Permit2.Permit2Adapter],
       },
     },
   },

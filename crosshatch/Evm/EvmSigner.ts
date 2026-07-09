@@ -1,12 +1,10 @@
-import { EvmAddress } from "./EvmAddress.ts"
+import { Redacted, Context, Layer } from "effect"
+import { Mnemonic as OxMnemonic } from "ox"
+import { privateKeyToAccount, type CustomSource } from "viem/accounts"
 
-export interface EvmSigner {
-  readonly address: typeof EvmAddress.Encoded
+import * as Mnemonic from "../Mnemonic.ts"
 
-  readonly signTypedData: (message: {
-    domain: Record<string, unknown>
-    types: Record<string, unknown>
-    primaryType: string
-    message: Record<string, unknown>
-  }) => Promise<typeof EvmAddress.Encoded>
-}
+export class EvmSigner extends Context.Service<EvmSigner, CustomSource>()("crosshatch/Evm/EvmSigner") {}
+
+export const layerMnemonic = (mnemonic: typeof Mnemonic.Mnemonic.Type) =>
+  Layer.succeed(EvmSigner, privateKeyToAccount(OxMnemonic.toPrivateKey(Redacted.value(mnemonic), { as: "Hex" })))
