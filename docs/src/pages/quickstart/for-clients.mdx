@@ -12,7 +12,7 @@ attached.
 
 ## Stablecoin Setup
 
-> This step is only relevant if you do not already have a seed phrase and/or stablecoin deposited in one of the derived
+> This step is only relevant if you do not already have a mnemonic and/or stablecoin deposited in one of its derived
 > chain-specific signers.
 
 The following command will create a Crosshatch user profile (signing capability) and help you (optional) onramp some USD
@@ -45,8 +45,8 @@ Provide `Http402.layerClient` with a `Payer` layer. The HTTP client intercepts 4
 payload, and retries with the payment attached.
 
 ```ts
-import { AssetConfiguration, Http402, KnownAssets, Mnemonic, Payer } from "crosshatch"
-import { EvmChain } from "crosshatch/Evm"
+import { Accept, Http402, KnownAssets, Mnemonic, Payer } from "crosshatch"
+import { Eip155Signer, Erc3009, Permit2 } from "crosshatch/Eip155"
 import { Effect, Layer } from "effect"
 import { HttpClient, HttpClientRequest } from "effect/unstable/http"
 
@@ -64,8 +64,9 @@ const program = Effect.gen(function* () {
 }).pipe(
   Effect.provide([
     Http402.layerClient,
-    Mnemonic.config("MNEMONIC").pipe(Effect.map(EvmChain.fromMnemonic), Effect.map(Payer.layer), Layer.unwrap),
-    AssetConfiguration.layer(KnownAssets),
+    Payer.layer,
+    Accept.layer(KnownAssets),
+    Layer.mergeAll(Erc3009.layer, Permit2.layer).pipe(Layer.provide(Mnemonic.toLayerEnv(Eip155Signer))),
   ]),
 )
 ```
@@ -75,8 +76,8 @@ const program = Effect.gen(function* () {
 The example above can be simplified via Effect AI.
 
 ```ts
-import { AssetConfiguration, Http402, KnownAssets, Mnemonic, Payer, LanguageModel402 } from "crosshatch"
-import { EvmChain } from "crosshatch/Evm"
+import { Accept, Http402, KnownAssets, Mnemonic, Payer, LanguageModel402 } from "crosshatch"
+import { Eip155Signer, Erc3009, Permit2 } from "crosshatch/Eip155"
 import { Effect, Layer } from "effect"
 import { LanguageModel } from "effect/unstable/ai"
 
@@ -92,8 +93,9 @@ const program = Effect.gen(function* () {
   }).pipe(
     Layer.provide([
       Http402.layerClient,
-      Mnemonic.config("MNEMONIC").pipe(Effect.map(EvmChain.fromMnemonic), Effect.map(Payer.layer), Layer.unwrap),
-      AssetConfiguration.layer(KnownAssets),
+      Payer.layer,
+      Accept.layer(KnownAssets),
+      Layer.mergeAll(Erc3009.layer, Permit2.layer).pipe(Layer.provide(Mnemonic.toLayerEnv(Eip155Signer))),
     ]),
   ),
 )
