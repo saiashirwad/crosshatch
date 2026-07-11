@@ -1,3 +1,5 @@
+import { env } from "node:process"
+
 import { CredentialsFromEnv } from "@distilled.cloud/coinbase"
 import { NodeHttpClient, NodeHttpServer } from "@effect/platform-node"
 import { describe, it, assert } from "@effect/vitest"
@@ -30,7 +32,7 @@ const Live = HttpRouter.serve(
   ),
 )
 
-describe(import.meta.url, () => {
+describe.skipIf(!env.TEST_LIVE)(import.meta.url, () => {
   it.effect(
     "verifies and settles a freshly signed EIP155 x402 payment",
     Effect.fn(function* () {
