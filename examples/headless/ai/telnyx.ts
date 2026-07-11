@@ -11,7 +11,9 @@ const OpenAiClientLive = OpenAiClient.layer({
   transformClient: HttpClient.transformResponse(
     Effect.flatMap((response) =>
       HttpClientResponse.schemaBodyJson(S.Any)(response).pipe(
-        Effect.map(({ service_tier: _, ...body }) => HttpClientResponse.fromWeb(response.request, Response.json(body))),
+        Effect.map(({ service_tier: _, ...body }) =>
+          HttpClientResponse.fromWeb(response.request, Response.json(body, response)),
+        ),
         Effect.orElseSucceed(() => response),
       ),
     ),
