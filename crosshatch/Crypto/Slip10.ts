@@ -7,13 +7,13 @@ const MAX_NON_HARDENED_INDEX = HARDENED - 1
 const CURVE = new TextEncoder().encode("ed25519 seed")
 
 export interface Slip10Node {
-  readonly privateKey: Uint8Array
+  readonly privateKeySeed: Uint8Array
   readonly chainCode: Uint8Array
 }
 
-const parse = (digest: Uint8Array): Slip10Node => ({
-  privateKey: digest.slice(0, 32),
-  chainCode: digest.slice(32),
+const parse = (mac: Uint8Array): Slip10Node => ({
+  privateKeySeed: mac.slice(0, 32),
+  chainCode: mac.slice(32),
 })
 
 export const derive = Effect.fnUntraced(function* (seed: Uint8Array, path: ReadonlyArray<number>) {
@@ -33,7 +33,7 @@ export const derive = Effect.fnUntraced(function* (seed: Uint8Array, path: Reado
   for (const index of path) {
     const data = new Uint8Array(37)
     data[0] = 0
-    data.set(node.privateKey, 1)
+    data.set(node.privateKeySeed, 1)
     new DataView(data.buffer).setUint32(33, index + HARDENED, false)
     node = yield* Hmac.mac(node.chainCode, data, "SHA-512").pipe(Effect.map(parse))
   }
