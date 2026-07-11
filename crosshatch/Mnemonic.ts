@@ -14,14 +14,14 @@ export interface Mnemonic extends S.Redacted<S.brand<S.String, typeof ID>>, Cont
 }
 export const Mnemonic: Mnemonic = Object.assign(Context.Service<Mnemonic, Mnemonic_>()(ID), S.Redacted(MnemonicText))
 
-export const text = (text: string) => Redacted.make(MnemonicText.make(text))
-export const layerText = flow(text, Layer.succeed(Mnemonic))
+export const fromText = (text: string) => Redacted.make(MnemonicText.make(text))
+export const layerText = flow(fromText, Layer.succeed(Mnemonic))
 
-export const config = (name: string) => Config.string(name).pipe(Config.map(text))
-export const layerConfig = flow(config, Layer.effect(Mnemonic))
+export const fromConfig = (config: Config.Config<string>) => Config.map(config, fromText)
+export const layerConfig = flow(fromConfig, Layer.effect(Mnemonic))
 
-export const env = config("MNEMONIC")
+export const env = fromConfig(Config.string("MNEMONIC"))
 export const layerEnv = Layer.effect(Mnemonic, env)
 
-export const random = Effect.sync(() => text(OxMnemonic.random(OxMnemonic.english)))
+export const random = Effect.sync(() => fromText(OxMnemonic.random(OxMnemonic.english)))
 export const layerRandom = Layer.effect(Mnemonic, random)
