@@ -35,5 +35,5 @@ export const encrypt = Effect.fnUntraced(function* (publicKey: typeof X25519Publ
 
 export const fromBytes = (raw: Uint8Array) =>
   Effect.promise(() => crypto.subtle.importKey("raw", raw.slice(), { name: "X25519" }, false, [])).pipe(
-    Effect.map(X25519PublicKey.make),
+    Effect.map((v) => X25519PublicKey.make(v)),
   )

@@ -12,7 +12,7 @@ export const Cek = CryptoKey.pipe(S.brand("crosshatch/Cek"))
 export const fromBytes = (bytes: Uint8Array) =>
   Effect.promise(() =>
     crypto.subtle.importKey("raw", bytes.slice(), { name: AES_GCM }, false, ["encrypt", "decrypt"]),
-  ).pipe(Effect.map(Cek.make))
+  ).pipe(Effect.map((v) => Cek.make(v)))
 
 export const random = Effect.sync(() => crypto.getRandomValues(new Uint8Array(32))).pipe(Effect.flatMap(fromBytes))
 
@@ -36,7 +36,7 @@ export const fromPrfv = Effect.fnUntraced(function* (value: Uint8Array) {
       false,
       ["encrypt", "decrypt"],
     ),
-  ).pipe(Effect.map(Cek.make))
+  ).pipe(Effect.map((v) => Cek.make(v)))
 })
 
 export const encrypt = Effect.fnUntraced(function* (cek: typeof Cek.Type, value: Uint8Array) {

@@ -6,7 +6,7 @@ export const Ed25519PublicKey = CryptoKey.pipe(S.brand("crosshatch/Ed25519Public
 
 export const fromBytes = (raw: Uint8Array) =>
   Effect.promise(() => crypto.subtle.importKey("raw", raw.slice(), { name: "Ed25519" }, true, ["verify"])).pipe(
-    Effect.map(Ed25519PublicKey.make),
+    Effect.map((v) => Ed25519PublicKey.make(v)),
   )
 
 export const verify = (verifier: typeof Ed25519PublicKey.Type, signature: Uint8Array, data: Uint8Array) =>
