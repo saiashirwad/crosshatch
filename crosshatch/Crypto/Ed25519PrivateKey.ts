@@ -15,7 +15,7 @@ export const fromSeed = (bytes: Uint8Array, config?: { readonly extractable?: bo
   pkcs8.set(bytes, ED25519_PKCS8_PREFIX.length)
   return Effect.promise(() =>
     crypto.subtle.importKey("pkcs8", pkcs8, { name: "Ed25519" }, config?.extractable ?? false, ["sign"]),
-  ).pipe(Effect.map(Ed25519PrivateKey.make))
+  ).pipe(Effect.map((v) => Ed25519PrivateKey.make(v)))
 }
 
 export const sign = (privateKey: typeof Ed25519PrivateKey.Type, data: Uint8Array) =>
