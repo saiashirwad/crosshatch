@@ -4,6 +4,8 @@ import { Effect, Layer, Schema as S } from "effect"
 import { Model } from "effect/unstable/ai"
 import { HttpClient, HttpClientResponse } from "effect/unstable/http"
 
+import type { LanguageModelConfig } from "./types"
+
 const OpenAiClientLive = OpenAiClient.layer({
   apiUrl: "https://x402.telnyx.com/v1",
   transformClient: HttpClient.transformResponse(
@@ -16,5 +18,5 @@ const OpenAiClientLive = OpenAiClient.layer({
   ),
 }).pipe(Layer.provide(Http402.layerClient))
 
-export const layer = ({ model, ...config }: typeof OpenAiLanguageModel.Config.Service & { readonly model: string }) =>
+export const layer = ({ model, ...config }: LanguageModelConfig) =>
   Model.make("telnyx", model, OpenAiLanguageModel.layer({ model, config }).pipe(Layer.provide(OpenAiClientLive)))

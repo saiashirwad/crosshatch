@@ -3,7 +3,9 @@ import { Http402 } from "crosshatch"
 import { Layer } from "effect"
 import { Model } from "effect/unstable/ai"
 
-export const layer = ({ model, ...config }: typeof OpenAiLanguageModel.Config.Service & { readonly model: string }) =>
+import type { LanguageModelConfig } from "./types"
+
+export const layer = ({ model, ...config }: LanguageModelConfig) =>
   Model.make(
     "blockrun",
     model,
