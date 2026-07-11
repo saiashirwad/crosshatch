@@ -1,6 +1,6 @@
 import { Effect, Schema as S } from "effect"
 
-import { Ed25519PrivateKey } from "./Ed25519PrivateKey.ts"
+import { Ed25519PrivateKey, fromBytes as privateKeyFromBytes } from "./Ed25519PrivateKey.ts"
 import { Ed25519PublicKey } from "./Ed25519PublicKey.ts"
 
 const TypeId = "crosshatch/Ed25519Pair" as const
@@ -21,3 +21,19 @@ export const random = (config?: { readonly extractable?: boolean | undefined }) 
   Effect.promise(() =>
     crypto.subtle.generateKey({ name: "Ed25519" }, config?.extractable ?? false, ["sign", "verify"]),
   ).pipe(Effect.map(fromCryptoKeyPair))
+
+export const fromPrivateKeyBytes = (bytes: Uint8Array) =>
+  Effect.all({
+    publicKey: privateKeyFromBytes(bytes, { extractable: true }).pipe(
+      Effect.flatMap((v) => Effect.promise(() => crypto.subtle.exportKey("jwk", v))),
+      Effect.flatMap(({ x }) =>
+        Effect.promise(() =>
+          crypto.subtle.importKey("jwk", { crv: "Ed25519", kty: "OKP", ...(x && { x }) }, { name: "Ed25519" }, true, [
+            "verify",
+          ]),
+        ),
+      ),
+      Effect.map(Ed25519PublicKey.make),
+    ),
+    privateKey: privateKeyFromBytes(bytes),
+  }).pipe(Effect.map(Ed25519Pair.make))
