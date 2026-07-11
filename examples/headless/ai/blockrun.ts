@@ -7,12 +7,12 @@ import { Model } from "effect/unstable/ai"
 const BLOCKRUN_API_URL = "https://blockrun.ai/api/v1"
 export const DEFAULT_MODEL = "openai/gpt-5-nano"
 
-export const model = (config: typeof OpenAiLanguageModel.Config.Service) => {
-  const modelName = config.model ?? DEFAULT_MODEL
+export const layer = (config: typeof OpenAiLanguageModel.Config.Service) => {
+  const model = config.model ?? DEFAULT_MODEL
   return Model.make(
     "blockrun",
-    modelName,
-    OpenAiLanguageModel.layer({ model: modelName, config }).pipe(
+    model,
+    OpenAiLanguageModel.layer({ model, config }).pipe(
       Layer.provide(OpenAiClient.layer({ apiUrl: BLOCKRUN_API_URL })),
       Layer.provide(Http402.layerClient),
     ),

@@ -1,8 +1,0 @@
-{
-  "extends": "../../konfik/tsconfig.base",
-  "compilerOptions": {
-    "types": ["@types/node"]
-  },
-  "include": ["."],
-  "references": [{ "path": "../../crosshatch" }]
-}
