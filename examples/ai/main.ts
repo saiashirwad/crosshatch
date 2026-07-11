@@ -1,23 +1,17 @@
+import { Payer } from "crosshatch"
 import { Effect, Layer } from "effect"
-import { LanguageModel } from "effect/unstable/ai"
+import { LanguageModel, Model } from "effect/unstable/ai"
 
 import { PayerLive } from "./_common.ts"
+import * as Blockrun from "./blockrun.ts"
 import * as Telnyx from "./telnyx.ts"
 
-// Effect.gen(function* () {
-//   const model = yield* LanguageModel.LanguageModel
-//   const response = yield* model.generateText({ prompt: "Hello from Crosshatch" })
-//   yield* Effect.log(response.text)
-// }).pipe(
-//   Effect.provide([Blockrun.model({ model: "deepseek/deepseek-chat" }).pipe(Layer.provide(PayerLive))]),
-//   Effect.runPromise,
-// )
+const program = <T>(model: Model.Model<T, LanguageModel.LanguageModel, Payer.Payer>) =>
+  Effect.gen(function* () {
+    const languageModel = yield* LanguageModel.LanguageModel
+    const response = yield* languageModel.generateText({ prompt: "Hello from Crosshatch" })
+    yield* Effect.log(response.text)
+  }).pipe(Effect.provide(model.pipe(Layer.provide(PayerLive))))
 
-Effect.gen(function* () {
-  const model = yield* LanguageModel.LanguageModel
-  const response = yield* model.generateText({ prompt: "Hello from Crosshatch" })
-  yield* Effect.log(response.text)
-}).pipe(
-  Effect.provide([Telnyx.model({ model: "meta-llama/Meta-Llama-3.1-8B-Instruct" }).pipe(Layer.provide(PayerLive))]),
-  Effect.runPromise,
-)
+await Effect.runPromise(program(Blockrun.model({ model: "deepseek/deepseek-chat" })))
+await Effect.runPromise(program(Telnyx.model({ model: "meta-llama/Meta-Llama-3.1-8B-Instruct" })))
