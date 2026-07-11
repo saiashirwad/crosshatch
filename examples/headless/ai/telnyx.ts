@@ -1,31 +1,20 @@
-import * as OpenAiCompatClient from "@effect/ai-openai-compat/OpenAiClient"
-import * as OpenAiLanguageModel from "@effect/ai-openai-compat/OpenAiLanguageModel"
+import { OpenAiClient, OpenAiLanguageModel } from "@effect/ai-openai-compat"
 import { Http402 } from "crosshatch"
-import { Effect, Layer, pipe, Schema } from "effect"
+import { Effect, Layer, Schema as S } from "effect"
 import { Model } from "effect/unstable/ai"
-import * as HttpClient from "effect/unstable/http/HttpClient"
-import * as HttpClientResponse from "effect/unstable/http/HttpClientResponse"
+import { HttpClient, HttpClientResponse } from "effect/unstable/http"
 
-const TELNYX_API_URL = "https://x402.telnyx.com/v1"
-export const DEFAULT_MODEL = "MiniMaxAI/MiniMax-M2.7"
-
-const OpenAiClient = OpenAiCompatClient.layer({
-  apiUrl: TELNYX_API_URL,
+const OpenAiClientLive = OpenAiClient.layer({
+  apiUrl: "https://x402.telnyx.com/v1",
   transformClient: HttpClient.transformResponse(
     Effect.flatMap((response) =>
-      pipe(
-        response,
-        HttpClientResponse.schemaBodyJson(Schema.Any),
-        Effect.map(({ service_tier: _, ...res }) =>
-          HttpClientResponse.fromWeb(response.request, new Response(JSON.stringify(res))),
-        ),
+      HttpClientResponse.schemaBodyJson(S.Any)(response).pipe(
+        Effect.map(({ service_tier: _, ...body }) => HttpClientResponse.fromWeb(response.request, Response.json(body))),
         Effect.orElseSucceed(() => response),
       ),
     ),
   ),
 }).pipe(Layer.provide(Http402.layerClient))
 
-export const layer = (config: typeof OpenAiLanguageModel.Config.Service) => {
-  const model = config.model ?? DEFAULT_MODEL
-  return Model.make("telnyx", model, OpenAiLanguageModel.layer({ model, config }).pipe(Layer.provide(OpenAiClient)))
-}
+export const layer = ({ model, ...config }: typeof OpenAiLanguageModel.Config.Service & { readonly model: string }) =>
+  Model.make("telnyx", model, OpenAiLanguageModel.layer({ model, config }).pipe(Layer.provide(OpenAiClientLive)))
