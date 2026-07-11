@@ -20,4 +20,5 @@ export interface PhysicalAssetDeployment {
   readonly name: string
   readonly version: string
   readonly adapters: ReadonlyArray<Adapter<any, any>>
+  readonly metadata?: unknown
 }

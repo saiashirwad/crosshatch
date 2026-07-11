@@ -32,7 +32,7 @@ export default Alchemy.Stack(
         CDP_API_KEY_SECRET: Config.redacted("CDP_API_KEY_SECRET"),
         OTEL_EXPORTER_OTLP_HEADERS: Config.redacted("OTEL_EXPORTER_OTLP_HEADERS"),
         MNEMONIC: Config.redacted("MNEMONIC"),
-        BASE_PROXY_URL: Config.redacted("BASE_PROXY_URL"),
+        BASE_RPC_URL: Config.redacted("BASE_RPC_URL"),
       },
     })
   }),

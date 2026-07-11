@@ -1,5 +1,6 @@
 import { type PhysicalAsset } from "../Asset.ts"
 import { Eip155Asset, Erc3009, Permit2 } from "../Eip155/Eip155.ts"
+import { SolanaAsset, SolanaAdapter, SolanaAddress } from "../Solana/Solana.ts"
 
 export const USDC = {
   peg: "USD",
@@ -40,6 +41,18 @@ export const USDC = {
         name: "USD Coin",
         version: "2",
         adapters: [Erc3009.Erc3009Adapter, Permit2.Permit2Adapter],
+      },
+    },
+    solana: {
+      "5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp": {
+        asset: SolanaAsset.SolanaAsset.make("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"),
+        decimals: 6,
+        name: "USD Coin",
+        version: "1",
+        adapters: [SolanaAdapter.SolanaAdapter],
+        metadata: {
+          tokenProgramId: SolanaAddress.SolanaAddress.make("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"),
+        },
       },
     },
   },
