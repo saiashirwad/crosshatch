@@ -27,7 +27,7 @@
     "./Extensions": "./Extensions/Extensions.ts",
     "./Facade": "./Browser/Facade/Facade.ts",
     "./Ramp": "./Ramp/Ramp.ts",
-    "./Svm": "./Svm/Svm.ts",
+    "./Solana": "./Solana/Solana.ts",
     "./package.json": "./package.json"
   },
   "publishConfig": {
@@ -40,7 +40,7 @@
       "./Extensions": "./dist/Extensions/Extensions.js",
       "./Facade": "./dist/Browser/Facade/Facade.js",
       "./Ramp": "./dist/Ramp/Ramp.js",
-      "./Svm": "./dist/Svm/Svm.js",
+      "./Solana": "./dist/Solana/Solana.js",
       "./package.json": "./package.json"
     }
   },

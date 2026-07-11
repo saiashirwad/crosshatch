@@ -1,20 +1,20 @@
 import { Effect, Schema as S } from "effect"
 
-import { Ed25519PrivateKey, fromBytes as privateKeyFromBytes } from "./Ed25519PrivateKey.ts"
-import { Ed25519PublicKey } from "./Ed25519PublicKey.ts"
+import * as Ed25519PrivateKey from "./Ed25519PrivateKey.ts"
+import * as Ed25519PublicKey from "./Ed25519PublicKey.ts"
 
 const TypeId = "crosshatch/Ed25519Pair" as const
 
 export class Ed25519Pair extends S.Class<Ed25519Pair>("Ed25519Pair")({
   [TypeId]: S.tag(TypeId),
-  privateKey: Ed25519PrivateKey,
-  publicKey: Ed25519PublicKey,
+  privateKey: Ed25519PrivateKey.Ed25519PrivateKey,
+  publicKey: Ed25519PublicKey.Ed25519PublicKey,
 }) {}
 
 export const fromCryptoKeyPair = ({ privateKey, publicKey }: CryptoKeyPair) =>
   Ed25519Pair.make({
-    privateKey: Ed25519PrivateKey.make(privateKey),
-    publicKey: Ed25519PublicKey.make(publicKey),
+    privateKey: Ed25519PrivateKey.Ed25519PrivateKey.make(privateKey),
+    publicKey: Ed25519PublicKey.Ed25519PublicKey.make(publicKey),
   })
 
 export const random = (config?: { readonly extractable?: boolean | undefined }) =>
@@ -22,9 +22,9 @@ export const random = (config?: { readonly extractable?: boolean | undefined }) 
     crypto.subtle.generateKey({ name: "Ed25519" }, config?.extractable ?? false, ["sign", "verify"]),
   ).pipe(Effect.map(fromCryptoKeyPair))
 
-export const fromPrivateKeyBytes = (bytes: Uint8Array) =>
+export const fromBytes = (bytes: Uint8Array) =>
   Effect.all({
-    publicKey: privateKeyFromBytes(bytes, { extractable: true }).pipe(
+    publicKey: Ed25519PrivateKey.fromBytes(bytes, { extractable: true }).pipe(
       Effect.flatMap((v) => Effect.promise(() => crypto.subtle.exportKey("jwk", v))),
       Effect.flatMap(({ x }) =>
         Effect.promise(() =>
@@ -33,7 +33,7 @@ export const fromPrivateKeyBytes = (bytes: Uint8Array) =>
           ]),
         ),
       ),
-      Effect.map(Ed25519PublicKey.make),
+      Effect.map(Ed25519PublicKey.Ed25519PublicKey.make),
     ),
-    privateKey: privateKeyFromBytes(bytes),
+    privateKey: Ed25519PrivateKey.fromBytes(bytes),
   }).pipe(Effect.map(Ed25519Pair.make))

@@ -7,10 +7,6 @@ export const sign = Effect.fnUntraced(function* (key: Uint8Array, data: Uint8Arr
     crypto.subtle.importKey("raw", key.slice(), { name: "HMAC", hash }, false, ["sign"]),
   )
   return yield* Effect.promise(() => crypto.subtle.sign("HMAC", cryptoKey, data.slice())).pipe(
-    Effect.map((mac) => new Uint8Array(mac)),
+    Effect.map((v) => new Uint8Array(v)),
   )
 })
-
-export const sha256 = (key: Uint8Array, data: Uint8Array) => sign(key, data, "SHA-256")
-
-export const sha512 = (key: Uint8Array, data: Uint8Array) => sign(key, data, "SHA-512")

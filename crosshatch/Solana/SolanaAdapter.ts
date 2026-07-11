@@ -15,9 +15,9 @@ import { Effect, Schema as S } from "effect"
 
 import { CreatePayloadError } from "../Adapter.ts"
 import * as Adapter from "../Adapter.ts"
-import * as SvmAddress from "./SvmAddress.ts"
-import * as SvmAsset from "./SvmAsset.ts"
-import { SvmSigner } from "./SvmSigner.ts"
+import * as SolanaAddress from "./SolanaAddress.ts"
+import * as SolanaAsset from "./SolanaAsset.ts"
+import { SolanaSigner } from "./SolanaSigner.ts"
 
 export class SolanaAdapter extends Adapter.Service<SolanaAdapter>()("@crosshatch/SolanaAdapter") {}
 
@@ -25,7 +25,7 @@ export const layer = SolanaAdapter.layer(
   Effect.fnUntraced(function* ({ deployment, accepted }) {
     const { feePayer, memo } = yield* S.decodeUnknownEffect(
       S.Struct({
-        feePayer: SvmAddress.SvmAddress,
+        feePayer: SolanaAddress.SolanaAddress,
         memo: S.String.pipe(
           S.check(
             S.makeFilter((s) => new TextEncoder().encode(s).length <= 256, {
@@ -36,13 +36,15 @@ export const layer = SolanaAdapter.layer(
         ),
       }),
     )(accepted.extra)
-    const mintAsset = yield* S.decodeUnknownEffect(SvmAsset.SvmAsset)(accepted.asset)
-    const { tokenProgramId } = yield* S.decodeUnknownEffect(S.Struct({ tokenProgramId: SvmAddress.SvmAddress }))(
-      deployment.metadata,
-    )
+    const mintAsset = yield* S.decodeUnknownEffect(SolanaAsset.SolanaAsset)(accepted.asset)
+    const { tokenProgramId } = yield* S.decodeUnknownEffect(
+      S.Struct({
+        tokenProgramId: SolanaAddress.SolanaAddress,
+      }),
+    )(deployment.metadata)
 
     return Effect.gen(function* () {
-      const signer = yield* SvmSigner
+      const signer = yield* SolanaSigner
       const latestBlockhash = yield* signer.getLatestBlockhash(accepted.network)
 
       const mint = address(mintAsset)
@@ -52,7 +54,13 @@ export const layer = SolanaAdapter.layer(
 
       const [[sourceAta], [destAta]] = yield* Effect.all([
         Effect.promise(() => findAssociatedTokenPda({ owner, mint, tokenProgram })),
-        Effect.promise(() => findAssociatedTokenPda({ owner: dest, mint, tokenProgram })),
+        Effect.promise(() =>
+          findAssociatedTokenPda({
+            owner: dest,
+            mint,
+            tokenProgram,
+          }),
+        ),
       ])
 
       const transactionMessage = solanaPipe(
@@ -81,11 +89,11 @@ export const layer = SolanaAdapter.layer(
           ),
       )
 
-      const signedTransaction = yield* Effect.tryPromise(() =>
+      const transaction = yield* Effect.tryPromise(() =>
         partiallySignTransactionMessageWithSigners(transactionMessage),
-      )
+      ).pipe(Effect.map(getBase64EncodedWireTransaction))
 
-      return { transaction: getBase64EncodedWireTransaction(signedTransaction) }
+      return { transaction }
     }).pipe(Effect.mapError((cause) => new CreatePayloadError({ cause })))
   }),
 )
