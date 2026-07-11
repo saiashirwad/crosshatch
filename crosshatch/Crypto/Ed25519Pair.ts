@@ -22,9 +22,9 @@ export const random = (config?: { readonly extractable?: boolean | undefined }) 
     crypto.subtle.generateKey({ name: "Ed25519" }, config?.extractable ?? false, ["sign", "verify"]),
   ).pipe(Effect.map(fromCryptoKeyPair))
 
-export const fromBytes = (bytes: Uint8Array) =>
+export const fromSeed = (bytes: Uint8Array) =>
   Effect.all({
-    publicKey: Ed25519PrivateKey.fromBytes(bytes, { extractable: true }).pipe(
+    publicKey: Ed25519PrivateKey.fromSeed(bytes, { extractable: true }).pipe(
       Effect.flatMap((v) => Effect.promise(() => crypto.subtle.exportKey("jwk", v))),
       Effect.flatMap(({ x }) =>
         Effect.promise(() =>
@@ -35,5 +35,5 @@ export const fromBytes = (bytes: Uint8Array) =>
       ),
       Effect.map(Ed25519PublicKey.Ed25519PublicKey.make),
     ),
-    privateKey: Ed25519PrivateKey.fromBytes(bytes),
+    privateKey: Ed25519PrivateKey.fromSeed(bytes),
   }).pipe(Effect.map(Ed25519Pair.make))

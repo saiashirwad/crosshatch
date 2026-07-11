@@ -17,7 +17,7 @@ export const layerMnemonic = Layer.effect(
   Effect.gen(function* () {
     const mnemonic = yield* Mnemonic.Mnemonic
     const keyPair = yield* Slip10.derive(OxMnemonic.toSeed(Redacted.value(mnemonic)), [44, 501, 0, 0]).pipe(
-      Effect.flatMap(({ privateKeySeed }) => Ed25519Pair.fromBytes(privateKeySeed)),
+      Effect.flatMap(({ privateKeySeed }) => Ed25519Pair.fromSeed(privateKeySeed)),
     )
     const address = makeSolanaKitAddress(yield* SolanaAddress.fromMnemonic(mnemonic))
     const signTransactions: TransactionPartialSigner["signTransactions"] = (transactions) =>

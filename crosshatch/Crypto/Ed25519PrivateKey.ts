@@ -9,7 +9,7 @@ const ED25519_PKCS8_PREFIX = new Uint8Array([
   0x30, 0x2e, 0x02, 0x01, 0x00, 0x30, 0x05, 0x06, 0x03, 0x2b, 0x65, 0x70, 0x04, 0x22, 0x04, 0x20,
 ])
 
-export const fromBytes = (bytes: Uint8Array, config?: { readonly extractable?: boolean | undefined }) => {
+export const fromSeed = (bytes: Uint8Array, config?: { readonly extractable?: boolean | undefined }) => {
   const pkcs8 = new Uint8Array(ED25519_PKCS8_PREFIX.length + bytes.byteLength)
   pkcs8.set(ED25519_PKCS8_PREFIX)
   pkcs8.set(bytes, ED25519_PKCS8_PREFIX.length)
