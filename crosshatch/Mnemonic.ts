@@ -1,33 +1,27 @@
-import { Layer, Redacted, Effect, Schema as S, Config } from "effect"
+import { Layer, Redacted, Effect, Schema as S, Config, Context, Brand, flow } from "effect"
 import { Mnemonic as OxMnemonic } from "ox"
-
-import type { AdapterModule } from "./Adapter.ts"
 
 export const MnemonicText = S.String.check(
   S.isPattern(/^(?:(?:[a-z]+ ){11}|(?:[a-z]+ ){14}|(?:[a-z]+ ){17}|(?:[a-z]+ ){20}|(?:[a-z]+ ){23})[a-z]+$/),
 ).pipe(S.brand("crosshatch/Mnemonic"))
 
-export const Mnemonic = S.Redacted(MnemonicText)
+const ID = "crosshatch/Mnemonic" as const
 
-export const make = (text: string) => Redacted.make(MnemonicText.make(text))
+type Mnemonic_ = [Redacted.Redacted<string & Brand.Brand<typeof ID>>][0]
 
-export const config = (name: string) => Config.string(name).pipe(Config.map(make))
+export interface Mnemonic extends S.Redacted<S.brand<S.String, typeof ID>>, Context.Service<Mnemonic, Mnemonic_> {
+  new (_: never): Context.ServiceClass.Shape<typeof ID, Mnemonic_>
+}
+export const Mnemonic: Mnemonic = Object.assign(Context.Service<Mnemonic, Mnemonic_>()(ID), S.Redacted(MnemonicText))
 
-export const random = Effect.sync(() => make(OxMnemonic.random(OxMnemonic.english)))
+export const text = (text: string) => Redacted.make(MnemonicText.make(text))
+export const layerText = flow(text, Layer.succeed(Mnemonic))
 
-export const toLayer =
-  <A>(mod: AdapterModule<A>) =>
-  (mnemonic: typeof Mnemonic.Type) =>
-    mod.layerMnemonic(mnemonic)
+export const config = (name: string) => Config.string(name).pipe(Config.map(text))
+export const layerConfig = flow(config, Layer.effect(Mnemonic))
 
-export const toLayerText =
-  <A>(mod: AdapterModule<A>) =>
-  (mnemonicText: string) =>
-    toLayer(mod)(make(mnemonicText))
+export const env = config("MNEMONIC")
+export const layerEnv = Layer.effect(Mnemonic, env)
 
-export const toLayerConfig =
-  <A>(mod: AdapterModule<A>) =>
-  (mnemonicConfig: Config.Config<typeof Mnemonic.Type>) =>
-    mnemonicConfig.pipe(Effect.map(mod.layerMnemonic), Layer.unwrap)
-
-export const toLayerEnv = <A>(mod: AdapterModule<A>) => toLayerConfig(mod)(config("MNEMONIC"))
+export const random = Effect.sync(() => text(OxMnemonic.random(OxMnemonic.english)))
+export const layerRandom = Layer.effect(Mnemonic, random)

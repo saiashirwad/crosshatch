@@ -1,7 +1,7 @@
 import { getSetComputeUnitLimitInstruction, getSetComputeUnitPriceInstruction } from "@solana-program/compute-budget"
 import { getAddMemoInstruction } from "@solana-program/memo"
 import { findAssociatedTokenPda, getTransferCheckedInstruction } from "@solana-program/token"
-import { address } from "@solana/addresses"
+import { address, type Address } from "@solana/addresses"
 import {
   appendTransactionMessageInstructions,
   createTransactionMessage,
@@ -15,6 +15,7 @@ import { Effect, Schema as S } from "effect"
 
 import { CreatePayloadError } from "../Adapter.ts"
 import * as Adapter from "../Adapter.ts"
+import { GetLatestBlockhash } from "./GetLatestBlockhash.ts"
 import * as SolanaAddress from "./SolanaAddress.ts"
 import * as SolanaAsset from "./SolanaAsset.ts"
 import { SolanaSigner } from "./SolanaSigner.ts"
@@ -23,9 +24,8 @@ export class SolanaAdapter extends Adapter.Service<SolanaAdapter>()("@crosshatch
 
 export const layer = SolanaAdapter.layer(
   Effect.fnUntraced(function* ({ deployment, accepted }) {
-    const { feePayer, memo } = yield* S.decodeUnknownEffect(
+    const { memo } = yield* S.decodeUnknownEffect(
       S.Struct({
-        feePayer: SolanaAddress.SolanaAddress,
         memo: S.String.pipe(
           S.check(
             S.makeFilter((s) => new TextEncoder().encode(s).length <= 256, {
@@ -45,29 +45,26 @@ export const layer = SolanaAdapter.layer(
 
     return Effect.gen(function* () {
       const signer = yield* SolanaSigner
-      const latestBlockhash = yield* signer.getLatestBlockhash(accepted.network)
+      const latestBlockhash = yield* GetLatestBlockhash.pipe(Effect.flatten)
 
       const mint = address(mintAsset)
-      const owner = signer.address
-      const dest = address(accepted.payTo)
       const tokenProgram = address(tokenProgramId)
 
-      const [[sourceAta], [destAta]] = yield* Effect.all([
-        Effect.promise(() => findAssociatedTokenPda({ owner, mint, tokenProgram })),
+      const ata = (owner: Address) =>
         Effect.promise(() =>
           findAssociatedTokenPda({
-            owner: dest,
-            mint,
+            owner: address(owner),
             tokenProgram,
+            mint,
           }),
-        ),
-      ])
+        )
+      const [[sourceAta], [destAta]] = yield* Effect.all([ata(signer.address), ata(address(accepted.payTo))])
 
-      const transactionMessage = solanaPipe(
+      const message = solanaPipe(
         createTransactionMessage({ version: 0 }),
-        (m) => setTransactionMessageFeePayer(address(feePayer), m),
-        (m) => setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, m),
-        (m) =>
+        (v) => setTransactionMessageFeePayer(signer.address, v),
+        (v) => setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, v),
+        (v) =>
           appendTransactionMessageInstructions(
             [
               getSetComputeUnitLimitInstruction({ units: 100000 }),
@@ -85,13 +82,13 @@ export const layer = SolanaAdapter.layer(
               ),
               ...(memo === undefined ? [] : [getAddMemoInstruction({ memo })]),
             ],
-            m,
+            v,
           ),
       )
 
-      const transaction = yield* Effect.tryPromise(() =>
-        partiallySignTransactionMessageWithSigners(transactionMessage),
-      ).pipe(Effect.map(getBase64EncodedWireTransaction))
+      const transaction = yield* Effect.promise(() => partiallySignTransactionMessageWithSigners(message)).pipe(
+        Effect.map(getBase64EncodedWireTransaction),
+      )
 
       return { transaction }
     }).pipe(Effect.mapError((cause) => new CreatePayloadError({ cause })))

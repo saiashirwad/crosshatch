@@ -20,7 +20,9 @@ const Live = HttpRouter.serve(
       Payer.layer.pipe(
         Layer.provide(
           Accept.layer(KnownAssets).pipe(
-            Layer.provide(Erc3009.layer.pipe(Layer.provide(Mnemonic.toLayerEnv(Eip155Signer)))),
+            Layer.provide(
+              Erc3009.layer.pipe(Layer.provide(Eip155Signer.layerMnemonic.pipe(Layer.provide(Mnemonic.layerEnv)))),
+            ),
           ),
         ),
       ),
