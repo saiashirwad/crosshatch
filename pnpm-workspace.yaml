@@ -35,7 +35,6 @@ catalog:
   "@solana-program/compute-budget": ^0.16.0
   "@solana-program/token": ^0.14.0
   "@solana/addresses": ^6.5.0
-  "@solana/rpc-types": ^6.5.0
   "@solana/transactions": ^6.5.0
   "@solana/kit": ^6.5.0
   "@streamdown/cjk": ^1.0.1

@@ -54,7 +54,6 @@
     "@solana-program/token": "catalog:",
     "@solana/addresses": "catalog:",
     "@solana/kit": "catalog:",
-    "@solana/rpc-types": "catalog:",
     "@solana/transactions": "catalog:",
     "@standard-schema/spec": "catalog:",
     "effect": "catalog:",

@@ -63,9 +63,6 @@ catalogs:
     '@solana/kit':
       specifier: ^6.5.0
       version: 6.10.0
-    '@solana/rpc-types':
-      specifier: ^6.5.0
-      version: 6.10.0
     '@solana/transactions':
       specifier: ^6.5.0
       version: 6.10.0
@@ -315,9 +312,6 @@ importers:
       '@solana/kit':
         specifier: 'catalog:'
         version: 6.10.0(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@6.0.3)(utf-8-validate@6.0.6)
-      '@solana/rpc-types':
-        specifier: 'catalog:'
-        version: 6.10.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@6.0.3)
       '@solana/transactions':
         specifier: 'catalog:'
         version: 6.10.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@6.0.3)
