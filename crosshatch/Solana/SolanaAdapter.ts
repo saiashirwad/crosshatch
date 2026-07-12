@@ -24,8 +24,9 @@ export class SolanaAdapter extends Adapter.Service<SolanaAdapter>()("@crosshatch
 
 export const layer = SolanaAdapter.layer(
   Effect.fnUntraced(function* ({ deployment, accepted }) {
-    const { memo } = yield* S.decodeUnknownEffect(
+    const { feePayer, memo } = yield* S.decodeUnknownEffect(
       S.Struct({
+        feePayer: SolanaAddress.SolanaAddress,
         memo: S.String.pipe(
           S.check(
             S.makeFilter((s) => new TextEncoder().encode(s).length <= 256, {
@@ -62,7 +63,7 @@ export const layer = SolanaAdapter.layer(
 
       const message = solanaPipe(
         createTransactionMessage({ version: 0 }),
-        (v) => setTransactionMessageFeePayer(signer.address, v),
+        (v) => setTransactionMessageFeePayer(address(feePayer), v),
         (v) => setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, v),
         (v) =>
           appendTransactionMessageInstructions(
