@@ -8,6 +8,31 @@
 
 ---
 
+## Example AI Client
+
+The following Effect Language Model uses accountless x402 to generate a completion.
+
+```ts
+import { OpenAiClient, OpenAiLanguageModel } from "@effect/ai-openai-compat"
+import { Http402 } from "crosshatch"
+import { Console, Effect, Layer } from "effect"
+import { LanguageModel } from "effect/unstable/ai"
+
+import { PayerLive } from "./_common.ts"
+
+const BlockrunLive = OpenAiLanguageModel.layer({ model: "deepseek/deepseek-chat" }).pipe(
+  Layer.provide(OpenAiClient.layer({ apiUrl: "https://blockrun.ai/api/v1" })),
+)
+
+LanguageModel.generateText({
+  prompt: "Hello from Crosshatch.",
+}).pipe(
+  Effect.tap(({ text }) => Console.log(text)),
+  Effect.provide(BlockrunLive.pipe(Layer.provide(Http402.layerClient.pipe(Layer.provide(PayerLive))))),
+  Effect.runFork,
+)
+```
+
 ## Example Merchant
 
 The following Effect HTTP API route charges and settles USDC on Base.
@@ -45,17 +70,6 @@ export default Effect.gen(function* () {
   return HttpServerResponse.text("The paid resource.").pipe(Http402.addResponseHeader(settlement))
 })
 ```
-
-- **Payment-aware routes.** Read a parsed x402 payload from the request context and branch between payment required and
-  paid-resource responses.
-- **Typed charge requirements.** Build the `402 Payment Required` response with Effect config, branded EIP-155
-  addresses, accepted assets, recipient chains, and required extensions.
-- **Any asset, any chain.** Charge in any asset on any chain without hand-rolling chain IDs, token metadata, or x402
-  requirement payloads.
-- **Configurable settlement timing.** Settle the submitted payment through the configured facilitator before returning
-  the paid resource. Or fork the settlement fiber and return the resource eagerly.
-- **Effect HTTP middleware.** Automatic payload parsing and context and extension echo injection with
-  `Http402.layerMiddleware`, keeping the route body focused on business logic.
 
 ## Contributing
 
