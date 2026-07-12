@@ -12,6 +12,7 @@ import {
   pipe as solanaPipe,
 } from "@solana/kit"
 import { Effect, Schema as S } from "effect"
+import { Hex } from "ox"
 
 import * as Scheme from "../Scheme.ts"
 import * as SolanaAddress from "./SolanaAddress.ts"
@@ -69,8 +70,8 @@ export const layer = SolanaScheme.layer(
           (v) =>
             appendTransactionMessageInstructions(
               [
-                getSetComputeUnitLimitInstruction({ units: 100000 }),
-                getSetComputeUnitPriceInstruction({ microLamports: 100000n }),
+                getSetComputeUnitLimitInstruction({ units: 20000 }),
+                getSetComputeUnitPriceInstruction({ microLamports: 1n }),
                 getTransferCheckedInstruction(
                   {
                     source: sourceAta,
@@ -82,7 +83,9 @@ export const layer = SolanaScheme.layer(
                   },
                   { programAddress: tokenProgram },
                 ),
-                ...(memo === undefined ? [] : [getAddMemoInstruction({ memo })]),
+                getAddMemoInstruction({
+                  memo: memo ?? Hex.random(16).slice(2),
+                }),
               ],
               v,
             ),
