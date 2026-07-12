@@ -1,17 +1,26 @@
-import { Effect, Schema as S } from "effect"
+import { Effect, Schema as S, Context } from "effect"
 
 import * as Ed25519PrivateKey from "./Ed25519PrivateKey.ts"
 import * as Ed25519PublicKey from "./Ed25519PublicKey.ts"
 
 const TypeId = "crosshatch/Ed25519Pair" as const
 
-export class Ed25519Pair extends S.Class<Ed25519Pair>("Ed25519Pair")({
-  [TypeId]: S.tag(TypeId),
-  privateKey: Ed25519PrivateKey.Ed25519PrivateKey,
-  publicKey: Ed25519PublicKey.Ed25519PublicKey,
-}) {}
+export interface Ed25519Pair {
+  readonly [TypeId]: typeof TypeId
+  readonly privateKey: typeof Ed25519PrivateKey.Ed25519PrivateKey.Type
+  readonly publicKey: typeof Ed25519PublicKey.Ed25519PublicKey.Type
+}
 
-export const fromCryptoKeyPair = ({ privateKey, publicKey }: CryptoKeyPair) =>
+export const Ed25519Pair = Object.assign(
+  Context.Service<Ed25519Pair, Ed25519Pair>()(TypeId),
+  S.Struct({
+    [TypeId]: S.tag(TypeId),
+    privateKey: Ed25519PrivateKey.Ed25519PrivateKey,
+    publicKey: Ed25519PublicKey.Ed25519PublicKey,
+  }),
+)
+
+export const fromNative = ({ privateKey, publicKey }: CryptoKeyPair) =>
   Ed25519Pair.make({
     privateKey: Ed25519PrivateKey.Ed25519PrivateKey.make(privateKey),
     publicKey: Ed25519PublicKey.Ed25519PublicKey.make(publicKey),
@@ -20,7 +29,7 @@ export const fromCryptoKeyPair = ({ privateKey, publicKey }: CryptoKeyPair) =>
 export const random = (config?: { readonly extractable?: boolean | undefined }) =>
   Effect.promise(() =>
     crypto.subtle.generateKey({ name: "Ed25519" }, config?.extractable ?? false, ["sign", "verify"]),
-  ).pipe(Effect.map(fromCryptoKeyPair))
+  ).pipe(Effect.map(fromNative))
 
 export const fromSeed = (bytes: Uint8Array) =>
   Effect.all({

@@ -2,7 +2,7 @@ import { Schema as S, Cause, Context, Deferred, Effect, Layer } from "effect"
 
 import { Extension, Payload } from "../index.ts"
 
-export const PaymentId = S.String.check(S.isLengthBetween(16, 128), S.isPattern(/^[a-zA-Z0-9_-]+$/)).pipe(
+export const PaymentId = S.String.check(S.isLengthBetween(16, 128), S.isPattern(/^[a-zA-Z0-9_-]+$/u)).pipe(
   S.brand("crosshatch/PaymentId"),
 )
 
@@ -25,13 +25,11 @@ export class Payments extends Context.Service<
   {
     readonly make: Effect.Effect<typeof PaymentId.Type>
 
-    readonly await: (
-      paymentId: typeof PaymentId.Type,
-    ) => Effect.Effect<typeof Payload.Payload.Type, Cause.NoSuchElementError>
+    readonly await: (paymentId: typeof PaymentId.Type) => Effect.Effect<Payload.Payload, Cause.NoSuchElementError>
 
     readonly resolve: (config: {
       readonly paymentId: typeof PaymentId.Type
-      readonly payload: typeof Payload.Payload.Type
+      readonly payload: Payload.Payload
     }) => Effect.Effect<void, Cause.NoSuchElementError>
   }
 >()("crosshatch/Payments") {}
@@ -39,10 +37,10 @@ export class Payments extends Context.Service<
 export const layerMemory = Layer.effect(
   Payments,
   Effect.sync(() => {
-    const invoices: Record<typeof PaymentId.Type, Deferred.Deferred<typeof Payload.Payload.Type>> = {}
+    const invoices: Record<typeof PaymentId.Type, Deferred.Deferred<Payload.Payload>> = {}
     return {
       make: Effect.gen(function* () {
-        const deferred = yield* Deferred.make<typeof Payload.Payload.Type>()
+        const deferred = yield* Deferred.make<Payload.Payload>()
         const paymentId = PaymentId.make(crypto.randomUUID())
         invoices[paymentId] = deferred
         return paymentId
