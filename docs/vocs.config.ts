@@ -36,6 +36,7 @@ export default defineConfig({
     variant: "tip",
   },
   baseUrl: "https://crosshatch.dev",
+  ogImageUrl: "https://crosshatch.dev/og.png",
   sidebar: {
     "/": [
       {
