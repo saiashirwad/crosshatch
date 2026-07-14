@@ -1,24 +1,24 @@
 import { Schema as S } from "effect"
 
-import type { Adapter } from "./Adapter.ts"
+import type { Scheme } from "./Scheme.ts"
 
 export const brand = S.brand("crosshatch/Asset")
 
 export const Asset = S.String.pipe(S.brand("crosshatch/Asset"))
 
-export type AssetConfig = Readonly<Record<string, PhysicalAsset>>
-
 export interface PhysicalAsset {
-  readonly symbol: string
-  readonly peg: string
-  readonly deployments: Record<string, Record<string, PhysicalAssetDeployment>>
-}
-
-export interface PhysicalAssetDeployment {
   readonly asset: typeof Asset.Type
   readonly decimals: number
   readonly name: string
   readonly version: string
-  readonly adapters: ReadonlyArray<Adapter<any, any>>
+  readonly schemes: ReadonlyArray<Scheme.Any>
   readonly metadata?: unknown
 }
+
+type ReferenceId = string
+type NamespaceId = string
+type AssetId = string
+
+export type References = Readonly<Record<ReferenceId, PhysicalAsset>>
+export type LogicalAsset = Readonly<Record<NamespaceId, References>>
+export type Denomination = Readonly<Record<AssetId, LogicalAsset>>

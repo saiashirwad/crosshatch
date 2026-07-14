@@ -1,5 +1,6 @@
-import { String, Schema as S, Effect, Context } from "effect"
+import { Schema as S, Effect, Context } from "effect"
 
+import { stringRaw } from "./_util.ts"
 import { InvalidAmountError } from "./Amount.ts"
 import { type Extension, ExtensionsInfo } from "./Extension.ts"
 import { Requirements, type RequirementsLike } from "./Requirements.ts"
@@ -33,10 +34,7 @@ export const make = Effect.fnUntraced(function* (
     resource: {
       url,
       ...(template && {
-        description:
-          typeof template === "string"
-            ? template
-            : String.stripMargin(globalThis.String.raw(template, ...(substitutions ?? []))),
+        description: stringRaw(template, substitutions),
       }),
     },
   } satisfies typeof Required.Type

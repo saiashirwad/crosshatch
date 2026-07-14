@@ -4,7 +4,7 @@ import { CredentialsFromEnv } from "@distilled.cloud/coinbase"
 import { NodeHttpClient, NodeHttpServer } from "@effect/platform-node"
 import { describe, it, assert } from "@effect/vitest"
 import { Requirements, Facilitator, KnownAssets, Payload, Required, Payer, Mnemonic, Accept } from "crosshatch"
-import { Eip155Address, Eip155Signer, Erc3009 } from "crosshatch/Eip155"
+import { Eip155Address, Eip155Signer, Erc3009Scheme } from "crosshatch/Eip155"
 import { Effect, Layer, Config } from "effect"
 import { HttpRouter } from "effect/unstable/http"
 import { HttpApiBuilder, HttpApiClient } from "effect/unstable/httpapi"
@@ -21,9 +21,11 @@ const Live = HttpRouter.serve(
       CredentialsFromEnv,
       Payer.layer.pipe(
         Layer.provide(
-          Accept.layer(KnownAssets).pipe(
+          Accept.layer(KnownAssets.Usd).pipe(
             Layer.provide(
-              Erc3009.layer.pipe(Layer.provide(Eip155Signer.layerMnemonic.pipe(Layer.provide(Mnemonic.layerEnv)))),
+              Erc3009Scheme.layer.pipe(
+                Layer.provide(Eip155Signer.layerMnemonic.pipe(Layer.provide(Mnemonic.layerEnv))),
+              ),
             ),
           ),
         ),
@@ -38,7 +40,7 @@ describe.skipIf(!env.TEST_LIVE)(import.meta.url, () => {
     Effect.fn(function* () {
       const required = yield* Required.make().pipe(
         Required.accept(
-          Requirements.asset(KnownAssets.USDC, {
+          Requirements.denomination(KnownAssets.Usd, {
             amount: 0.01,
             recipients: {
               eip155: {

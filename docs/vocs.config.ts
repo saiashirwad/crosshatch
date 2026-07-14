@@ -35,7 +35,6 @@ export default defineConfig({
     href: "https://discord.gg/CSXCRUKjh9",
     variant: "tip",
   },
-  baseUrl: "https://crosshatch.dev",
   ogImageUrl: "https://crosshatch.dev/og.png",
   sidebar: {
     "/": [
@@ -51,6 +50,7 @@ export default defineConfig({
             ],
           },
           { text: "Lifecycle", link: "/lifecycle" },
+          { text: "Facilitation", link: "/facilitation" },
         ],
       },
       {
@@ -66,17 +66,16 @@ export default defineConfig({
       {
         text: "Payment Capability",
         items: [
-          { text: "Bridge", link: "/bridge" },
           { text: "Payer", link: "/payer" },
-          {
-            text: "Adapter",
-            link: "/adapter",
-            collapsed: true,
-            items: [
-              { text: "EIP-155", link: "/eip155" },
-              { text: "Solana", link: "/solana" },
-            ],
-          },
+          { text: "Bridge", link: "/bridge" },
+          { text: "Scheme", link: "/scheme" },
+        ],
+      },
+      {
+        text: "Schemes",
+        items: [
+          { text: "EIP-155", link: "/eip155" },
+          { text: "Solana", link: "/solana" },
         ],
       },
     ],

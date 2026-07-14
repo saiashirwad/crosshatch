@@ -2,21 +2,21 @@
 title: Solana
 description:
   Configure Solana assets, mnemonic signing, latest blockhash lookup, and SPL
-  token payment adapters.
+  token payment schemes.
 ---
 
 # Solana
 
 The `crosshatch/Solana` module contains the Solana provider-specific schemas,
-signer, latest-blockhash service, and payment adapter.
+signer, latest-blockhash service, and payment scheme.
 
 ```ts
 import {
-  GetLatestBlockhash,
-  SolanaAdapter,
   SolanaAddress,
   SolanaAsset,
+  SolanaScheme,
   SolanaSigner,
+  SolanaState,
 } from "crosshatch/Solana"
 ```
 
@@ -45,24 +45,24 @@ const SolanaSignerLive = SolanaSigner.layerMnemonic.pipe(
 
 See [Mnemonic](/mnemonic) for mnemonic sources.
 
-## Latest Blockhash
+## State
 
-Solana payload creation needs a recent blockhash. Provide `GetLatestBlockhash`
-anywhere you provide `SolanaAdapter.layer`.
+Solana payload creation needs current chain state, including a recent blockhash.
+Provide `SolanaState` anywhere you provide `SolanaScheme.layer`.
 
 ```ts
 import { Config, Layer } from "effect"
-import { GetLatestBlockhash } from "crosshatch/Solana"
+import { SolanaState } from "crosshatch/Solana"
 
-const BlockhashLive = Config.string("SOLANA_RPC_URL").pipe(
-  Config.map(GetLatestBlockhash.layer),
+const SolanaStateLive = Config.string("SOLANA_RPC_URL").pipe(
+  Config.map(SolanaState.layer),
   Layer.unwrap,
 )
 ```
 
-## Adapter
+## Scheme
 
-`SolanaAdapter.layer` creates a signed base64-encoded Solana transaction. The
+`SolanaScheme.layer` creates a signed base64-encoded Solana transaction. The
 transaction transfers the selected SPL token amount from the payer's associated
 token account to the merchant's associated token account.
 
@@ -70,17 +70,17 @@ The accepted requirement's `extra` field must include the fee payer and may
 include a memo.
 
 ```ts
-import { SolanaAdapter, SolanaSigner } from "crosshatch/Solana"
+import { SolanaScheme, SolanaSigner } from "crosshatch/Solana"
 import { Layer } from "effect"
 
-const SolanaLive = SolanaAdapter.layer.pipe(
-  Layer.provide([SolanaSigner.layerMnemonic, BlockhashLive]),
+const SolanaLive = SolanaScheme.layer.pipe(
+  Layer.provide([SolanaSigner.layerMnemonic, SolanaStateLive]),
 )
 ```
 
 ## Payer Composition
 
-A Solana-capable payer provides the Solana adapter, signer, latest blockhash
-service, and asset metadata.
+A Solana-capable payer provides the Solana scheme, signer, chain state service,
+and denomination.
 
 See [Payer Service](/payer) for the full composition pattern.

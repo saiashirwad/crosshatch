@@ -5,7 +5,6 @@ import type { PathsForPages } from 'waku/router'
 
 // prettier-ignore
 type Page =
-  | { path: '/adapter'; render: 'static' }
   | { path: '/articles/hello-crosshatch'; render: 'static' }
   | { path: '/articles'; render: 'static' }
   | { path: '/asset'; render: 'static' }
@@ -13,11 +12,9 @@ type Page =
   | { path: '/changelog'; render: 'static' }
   | { path: '/eip155'; render: 'static' }
   | { path: '/extension'; render: 'static' }
+  | { path: '/facilitation'; render: 'static' }
   | { path: '/'; render: 'static' }
   | { path: '/lifecycle'; render: 'static' }
-  | { path: '/merchants/deposit-rebate'; render: 'static' }
-  | { path: '/merchants/granular-settlement'; render: 'static' }
-  | { path: '/merchants/opentelemetry'; render: 'static' }
   | { path: '/mnemonic'; render: 'static' }
   | { path: '/payer'; render: 'static' }
   | { path: '/payload'; render: 'static' }
@@ -25,6 +22,7 @@ type Page =
   | { path: '/quickstart/for-merchants'; render: 'static' }
   | { path: '/quickstart'; render: 'static' }
   | { path: '/required'; render: 'static' }
+  | { path: '/scheme'; render: 'static' }
   | { path: '/solana'; render: 'static' }
 
 // prettier-ignore
