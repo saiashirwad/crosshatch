@@ -49,6 +49,7 @@
     "@effect/platform-browser": "catalog:",
     "@effect/platform-node": "catalog:",
     "@napi-rs/keyring": "catalog:",
+    "@scure/bip39": "catalog:",
     "@solana-program/compute-budget": "catalog:",
     "@solana-program/memo": "catalog:",
     "@solana-program/token": "catalog:",

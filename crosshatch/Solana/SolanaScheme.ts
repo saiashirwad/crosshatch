@@ -12,8 +12,8 @@ import {
   pipe as solanaPipe,
 } from "@solana/kit"
 import { Effect, Schema as S } from "effect"
-import { Hex } from "ox"
 
+import { Random } from "../Crypto/Crypto.ts"
 import * as Scheme from "../Scheme.ts"
 import * as SolanaAddress from "./SolanaAddress.ts"
 import * as SolanaAsset from "./SolanaAsset.ts"
@@ -83,9 +83,7 @@ export const layer = SolanaScheme.layer(
                   },
                   { programAddress: tokenProgram },
                 ),
-                getAddMemoInstruction({
-                  memo: memo ?? Hex.random(16).slice(2),
-                }),
+                getAddMemoInstruction({ memo: memo ?? Random.hex(16) }),
               ],
               v,
             ),
