@@ -1,6 +1,7 @@
 import { Effect, Schema as S } from "effect"
 import { getAddress, toHex, type Hex } from "viem"
 
+import * as Random from "../Crypto/Random.ts"
 import * as Scheme from "../Scheme.ts"
 import { Eip155Signer } from "./Eip155Signer.ts"
 
@@ -58,7 +59,7 @@ export const layer = Permit2Scheme.layer({ known: S.Void, extra: Extra }, () =>
     const signer = yield* Eip155Signer
     const now = Math.floor(Date.now() / 1000)
     const chainId = parseInt(accepted.network.split(":")[1]!)
-    const nonce = BigInt(toHex(crypto.getRandomValues(new Uint8Array(32)))).toString()
+    const nonce = BigInt(toHex(Random.bytes(32))).toString()
     const token = getAddress(accepted.asset) as Hex
     const { amount } = accepted
     const spender = EXACT_PERMIT2_PROXY as Hex

@@ -2,6 +2,7 @@ import { Effect, Schema as S } from "effect"
 
 import * as CryptoKey from "./CryptoKey.ts"
 import { Symmetric } from "./Envelope.ts"
+import * as Random from "./Random.ts"
 
 const AES_GCM = "AES-GCM"
 const AES_KEY_BITS = 256
@@ -20,7 +21,7 @@ export const fromBytes = (bytes: Uint8Array, config?: { readonly extractable?: b
 export const toBytes = (cek: typeof Cek.Type) => CryptoKey.toBytes(cek)
 
 export const random = (config?: { readonly extractable?: boolean | undefined }) =>
-  Effect.sync(() => crypto.getRandomValues(new Uint8Array(32))).pipe(Effect.flatMap((v) => fromBytes(v, config)))
+  Effect.sync(() => Random.bytes(32)).pipe(Effect.flatMap((v) => fromBytes(v, config)))
 
 export const fromPrf = Effect.fnUntraced(function* (
   value: Uint8Array,
@@ -48,7 +49,7 @@ export const fromPrf = Effect.fnUntraced(function* (
 })
 
 export const encrypt = Effect.fnUntraced(function* (cek: typeof Cek.Type, value: Uint8Array) {
-  const iv = crypto.getRandomValues(new Uint8Array(12))
+  const iv = Random.bytes(12)
   const cv = yield* Effect.promise(() =>
     crypto.subtle.encrypt(
       {

@@ -13,6 +13,7 @@ import {
 } from "@solana/kit"
 import { Effect, Schema as S } from "effect"
 
+import { Random } from "../Crypto/Crypto.ts"
 import * as Scheme from "../Scheme.ts"
 import * as SolanaAddress from "./SolanaAddress.ts"
 import * as SolanaAsset from "./SolanaAsset.ts"
@@ -69,8 +70,8 @@ export const layer = SolanaScheme.layer(
           (v) =>
             appendTransactionMessageInstructions(
               [
-                getSetComputeUnitLimitInstruction({ units: 100000 }),
-                getSetComputeUnitPriceInstruction({ microLamports: 100000n }),
+                getSetComputeUnitLimitInstruction({ units: 20000 }),
+                getSetComputeUnitPriceInstruction({ microLamports: 1n }),
                 getTransferCheckedInstruction(
                   {
                     source: sourceAta,
@@ -82,7 +83,7 @@ export const layer = SolanaScheme.layer(
                   },
                   { programAddress: tokenProgram },
                 ),
-                ...(memo === undefined ? [] : [getAddMemoInstruction({ memo })]),
+                getAddMemoInstruction({ memo: memo ?? Random.hex(16) }),
               ],
               v,
             ),
