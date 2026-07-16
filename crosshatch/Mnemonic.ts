@@ -1,5 +1,5 @@
 import { generateMnemonic, mnemonicToSeedSync } from "@scure/bip39"
-import { wordlist } from "@scure/bip39/wordlists/english"
+import { wordlist } from "@scure/bip39/wordlists/english.js"
 import { Layer, Redacted, Effect, Schema as S, Config, Context, Brand, flow } from "effect"
 
 export const MnemonicText = S.String.check(
