@@ -1,6 +1,7 @@
 import { Effect, Schema as S } from "effect"
 
 import * as CryptoKey from "./CryptoKey.ts"
+import * as Random from "./Random.ts"
 
 export const X25519PublicKey = CryptoKey.CryptoKey.pipe(S.brand("crosshatch/X25519PublicKey"))
 
@@ -23,7 +24,7 @@ export const encrypt = Effect.fnUntraced(function* (publicKey: typeof X25519Publ
       ["encrypt"],
     ),
   )
-  const iv = crypto.getRandomValues(new Uint8Array(12))
+  const iv = Random.bytes(12)
   const cv = yield* Effect.promise(() => crypto.subtle.encrypt({ iv, name: "AES-GCM" }, aeadKey, value.slice())).pipe(
     Effect.map((v) => new Uint8Array(v)),
   )

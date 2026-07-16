@@ -1,6 +1,7 @@
 import { Effect, Schema as S } from "effect"
 import { getAddress, toHex, type Hex } from "viem"
 
+import * as Random from "../Crypto/Random.ts"
 import * as Scheme from "../Scheme.ts"
 import { Eip155Signer } from "./Eip155Signer.ts"
 
@@ -48,7 +49,7 @@ export const layer = Erc3009Scheme.layer({ known: S.Void, extra: Extra }, () =>
       value: accepted.amount,
       validAfter: (now - 600).toString(),
       validBefore: (now + accepted.maxTimeoutSeconds).toString(),
-      nonce: toHex(crypto.getRandomValues(new Uint8Array(32))),
+      nonce: toHex(Random.bytes(32)),
     }
     const signature = yield* Effect.promise(() =>
       signer.signTypedData({
