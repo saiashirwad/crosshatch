@@ -1,11 +1,12 @@
 import { settleX402Payment } from "@distilled.cloud/coinbase"
-import { ChainId, Facilitator } from "crosshatch"
+import { ChainId } from "crosshatch"
+import { FacilitatorApi } from "crosshatch/FacilitatorApi"
 import { Effect, Schema as S } from "effect"
 
 import { handler } from "./_common.ts"
 
 export const handleSettle = handler(
-  Facilitator.FacilitatorApi,
+  FacilitatorApi,
   "facilitator",
   "settle",
   ({ payload: { paymentPayload, paymentRequirements } }) =>
@@ -15,7 +16,7 @@ export const handleSettle = handler(
       paymentRequirements: paymentRequirements as never,
     }).pipe(
       Effect.flatMap(({ network, ...rest }) =>
-        S.decodeUnknownEffect(ChainId.ChainId)(network).pipe(Effect.map((network) => ({ network, ...rest }))),
+        S.decodeUnknownEffect(ChainId.ChainId)(network).pipe(Effect.map((network) => ({ network, ...rest }) as never)),
       ),
       Effect.orDie,
     ),

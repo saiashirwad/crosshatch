@@ -66,6 +66,9 @@ import { Facilitator } from "crosshatch"
 yield * Facilitator.settle({ payload })
 ```
 
+Provide `Facilitator.layer()` to use the hosted Crosshatch facilitator, or
+`Facilitator.layer({ baseUrl })` for another deployment.
+
 ## Effect HTTP
 
 Crosshatch includes a small Effect HTTP integration for the common merchant
@@ -173,9 +176,10 @@ const paidRoute = Effect.gen(function* () {
 })
 ```
 
-`Facilitator.settle({ payload })` uses the configured facilitator client. It
-fails the route if the facilitator cannot settle the payment or returns an
-unsuccessful settlement result.
+`Facilitator.settle({ payload })` uses the provided facilitator client. It fails
+with `SettlementError` when the facilitator returns an unsuccessful result.
+Provide `Facilitator.layer()` or an explicit `Facilitator.layer({ baseUrl })`
+around the application.
 
 ### Non-blocking Settlement
 

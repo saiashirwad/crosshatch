@@ -1,5 +1,5 @@
 import * as Cloudflare from "alchemy/Cloudflare"
-import { Facilitator, Required, Requirements, ChxHttp, KnownAssets, Payload } from "crosshatch"
+import { Required, Requirements, ChxHttp, KnownAssets, Payload, Facilitator } from "crosshatch"
 import { Eip155Address } from "crosshatch/Eip155"
 import { PaymentId } from "crosshatch/Extensions"
 import { Layer, Effect, Config } from "effect"
@@ -57,6 +57,7 @@ export default class ExampleEffectHttp extends Cloudflare.Worker<ExampleEffectHt
       }),
     ).pipe(
       Layer.provide([
+        Facilitator.layer(),
         HttpRouter.cors({
           allowedHeaders: ["*"],
           allowedMethods: ["*"],

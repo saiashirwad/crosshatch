@@ -1,18 +1,19 @@
 import { Schema as S, Effect, Context } from "effect"
 
-import { stringRaw } from "./_util.ts"
+import { JsonRecord, stringRaw } from "./_util.ts"
 import { InvalidAmountError } from "./Amount.ts"
-import { type Extension, ExtensionsInfo } from "./Extension.ts"
+import type { Extension } from "./Extension.ts"
 import { Requirements, type RequirementsLike } from "./Requirements.ts"
 import { ResourceInfo } from "./ResourceInfo.ts"
 import { Version } from "./Version.ts"
 
+export type Required = typeof Required.Type
 export const Required = S.Struct({
   x402Version: Version,
   resource: ResourceInfo,
   accepts: S.Array(Requirements),
   error: S.String.pipe(S.optional),
-  extensions: ExtensionsInfo.pipe(S.optional),
+  extensions: JsonRecord.pipe(S.optional),
 })
 
 export const RequiredFromBase64JsonString = S.StringFromBase64.pipe(
@@ -37,14 +38,12 @@ export const make = Effect.fnUntraced(function* (
         description: stringRaw(template, substitutions),
       }),
     },
-  } satisfies typeof Required.Type
+  } satisfies Required
 })
 
 export const accept =
   (...acceptsInputs: ReadonlyArray<RequirementsLike>) =>
-  <E, R>(
-    effect: Effect.Effect<typeof Required.Type, E, R>,
-  ): Effect.Effect<typeof Required.Type, E | InvalidAmountError, R> =>
+  <E, R>(effect: Effect.Effect<Required, E, R>): Effect.Effect<Required, E | InvalidAmountError, R> =>
     Effect.flatMap(
       effect,
       Effect.fnUntraced(function* ({ accepts, ...rest }) {
@@ -63,14 +62,14 @@ export const extend =
     K extends string,
     Name extends string,
     ExtensionPayload extends Extension.Info,
-    Success extends Extension.Echo<ExtensionPayload>,
+    Enrichment extends Extension.Enrichment<ExtensionPayload>,
   >(
-    extension: Extension<Self, K, Name, ExtensionPayload, Success>,
+    extension: Extension<Self, K, Name, ExtensionPayload, Enrichment>,
     payload: ExtensionPayload["Type"],
   ) =>
   <E, R>(
-    effect: Effect.Effect<typeof Required.Type, E, R>,
-  ): Effect.Effect<typeof Required.Type, E | S.SchemaError, R | ExtensionPayload["EncodingServices"]> =>
+    effect: Effect.Effect<Required, E, R>,
+  ): Effect.Effect<Required, E | S.SchemaError, R | ExtensionPayload["EncodingServices"]> =>
     Effect.flatMap(
       effect,
       Effect.fnUntraced(function* ({ extensions, ...rest }) {

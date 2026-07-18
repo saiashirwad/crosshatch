@@ -1,4 +1,4 @@
-import { Effect, Context, Schema as S, Option, Layer } from "effect"
+import { Effect, Context, Schema as S, Option, Layer, Record } from "effect"
 
 import type { Denomination, PhysicalAsset } from "./Asset.ts"
 import { ChainId } from "./ChainId.ts"
@@ -10,9 +10,9 @@ export class AcceptError extends S.TaggedErrorClass<AcceptError>()("AcceptError"
 
 export class Accept extends Context.Service<
   Accept,
-  ({ required }: { readonly required: typeof Required.Type }) => Effect.Effect<
+  ({ required }: { readonly required: Required }) => Effect.Effect<
     {
-      readonly accepted: typeof Requirements.Type
+      readonly accepted: Requirements
       readonly acceptedI: number
       readonly chainId: typeof ChainId.Type
       readonly physical: PhysicalAsset
@@ -29,9 +29,9 @@ export const layer = (denomination: Denomination) =>
       const context = yield* Effect.context<never>()
       return Effect.fnUntraced(function* ({ required }) {
         const { accepts } = required
-        for (const asset of Object.values(denomination)) {
-          for (const [namespace, references] of Object.entries(asset)) {
-            for (const [reference, physical] of Object.entries(references)) {
+        for (const asset of Record.values(denomination)) {
+          for (const [namespace, references] of Record.toEntries(asset)) {
+            for (const [reference, physical] of Record.toEntries(references)) {
               const chainId = ChainId.make(`${namespace}:${reference}`, { disableChecks: true })
               for (let acceptedI = 0; acceptedI < accepts.length; acceptedI++) {
                 const accepted = accepts[acceptedI]!

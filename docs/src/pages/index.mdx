@@ -170,7 +170,7 @@ const router = HttpRouter.add(
       ChxHttp.addResponseHeader(settlement),
     )
   }),
-).pipe(Layer.provide(ChxHttp.layerMiddleware()))
+).pipe(Layer.provide([ChxHttp.layerMiddleware(), Facilitator.layer()]))
 ```
 
     </div>

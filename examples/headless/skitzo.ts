@@ -1,7 +1,8 @@
 import { KnownAssets, Facilitator, Required, Requirements, Payload } from "crosshatch"
 import { BrowserPayer } from "crosshatch/Browser"
 import { Eip155Address } from "crosshatch/Eip155"
-import { Config, Effect } from "effect"
+import { Config, Effect, Layer } from "effect"
+import { FetchHttpClient } from "effect/unstable/http"
 
 Effect.gen(function* () {
   const recipient = yield* Config.schema(Eip155Address.Eip155Address, "PAY_TO_EIP155")
@@ -20,4 +21,7 @@ Effect.gen(function* () {
   )
   const { payload } = yield* Payload.make({ required })
   yield* Facilitator.settle({ payload })
-}).pipe(Effect.provide(BrowserPayer.layer), Effect.runFork)
+}).pipe(
+  Effect.provide([BrowserPayer.layer, Facilitator.layer().pipe(Layer.provide(FetchHttpClient.layer))]),
+  Effect.runFork,
+)
