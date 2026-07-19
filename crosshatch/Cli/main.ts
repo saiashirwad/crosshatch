@@ -1,20 +1,19 @@
 #!/usr/bin/env node
 
-import { NodeRuntime } from "@effect/platform-node"
-import { Effect } from "effect"
+import { NodeRuntime, NodeServices, NodeHttpClient } from "@effect/platform-node"
+import { Effect, Layer } from "effect"
 import { Command } from "effect/unstable/cli"
 
 import PackageJson from "../package.json" with { type: "json" }
-import { dev } from "./dev/dev.ts"
-import { PreludeLive } from "./PreludeLive.ts"
+import { RampClient } from "../Ramp/RampClient.ts"
+import { dev } from "./dev.ts"
 import { profile } from "./profile.ts"
 
 Command.make("crosshatch").pipe(
-  Command.withSubcommands([profile, dev]),
-  Command.run({
-    version: PackageJson.version,
-  }),
-  Effect.provide(PreludeLive),
+  Command.withSubcommands([dev, profile]),
+  Command.run({ version: PackageJson.version }),
+  Effect.scoped,
+  Effect.provide([RampClient.layer.pipe(Layer.provideMerge(NodeHttpClient.layerFetch)), NodeServices.layer]),
   Effect.onError(Effect.logError),
   NodeRuntime.runMain,
 )

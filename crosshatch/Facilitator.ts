@@ -1,4 +1,4 @@
-import { Context, Effect, Layer, Schema as S } from "effect"
+import { Config, Context, Effect, Layer, Schema as S, Option } from "effect"
 import { HttpApiClient } from "effect/unstable/httpapi"
 
 import { FacilitatorApiGroup, FacilitatorApi } from "./FacilitatorApi/FacilitatorApi.ts"
@@ -13,9 +13,22 @@ export class Facilitator extends Context.Service<
 export const layer = (config?: { readonly baseUrl?: string | undefined }) =>
   Layer.effect(
     Facilitator,
-    HttpApiClient.make(FacilitatorApi, {
-      baseUrl: config?.baseUrl ?? "https://cirque.sh",
-    }).pipe(Effect.map(({ facilitator }) => facilitator)),
+    Effect.gen(function* () {
+      const baseUrl = yield* Config.all({
+        host: Config.string("CROSSHATCH_DEV_HOST").pipe(Config.withDefault("localhost")),
+        port: Config.port("CROSSHATCH_DEV_PORT"),
+      }).pipe(
+        Effect.option,
+        Effect.map(
+          Option.match({
+            onSome: ({ host, port }) => `http://${host.includes(":") ? `[${host}]` : host}:${port}`,
+            onNone: () => config?.baseUrl ?? "https://cirque.sh",
+          }),
+        ),
+      )
+      const { facilitator } = yield* HttpApiClient.make(FacilitatorApi, { baseUrl })
+      return facilitator
+    }),
   )
 
 export class VerificationError extends S.TaggedErrorClass<VerificationError>()("VerificationError", {

@@ -16,8 +16,7 @@ Use `Facilitator.layer()` for the public Crosshatch facilitator, or
 
 ## Crosshatch Facilitator
 
-`layer()` derives the facilitator URL from the current Crosshatch `Stage`. The
-default production stage uses `https://facilitator.crosshatch.dev`.
+`layer()` uses the hosted facilitator at `https://cirque.sh` by default.
 
 ```ts
 import { Facilitator } from "crosshatch"
@@ -39,7 +38,8 @@ URL.
 
 ```ts
 import { Facilitator } from "crosshatch"
-import { Effect } from "effect"
+import { Effect, Layer } from "effect"
+import { FetchHttpClient } from "effect/unstable/http"
 
 const Program = Effect.gen(function* () {
   // Your merchant routes or settlement effects live here.
@@ -49,7 +49,7 @@ Program.pipe(
   Effect.provide(
     Facilitator.layer({
       baseUrl: "https://facilitator.example.com",
-    }),
+    }).pipe(Layer.provide(FetchHttpClient.layer)),
   ),
 )
 ```
@@ -64,10 +64,13 @@ every paid route settles against the same service.
 
 ```ts
 import { Facilitator, Payload } from "crosshatch"
-import { Effect } from "effect"
+import { Effect, Layer } from "effect"
+import { FetchHttpClient } from "effect/unstable/http"
 
 const route = Effect.gen(function* () {
-  const payload = yield* Payload.pipe(Effect.flatMap(Effect.fromNullishOr))
+  const payload = yield* Payload.Payload.pipe(
+    Effect.flatMap(Effect.fromNullishOr),
+  )
   const settlement = yield* Facilitator.settle({ payload })
   // ...
 }).pipe(
@@ -75,7 +78,7 @@ const route = Effect.gen(function* () {
   Effect.provide(
     Facilitator.layer({
       baseUrl: "https://facilitator.example.com",
-    }),
+    }).pipe(Layer.provide(FetchHttpClient.layer)),
   ),
   // [!code focus:end]
 )
@@ -88,15 +91,18 @@ traffic through an environment-specific deployment, or need to test settlement
 against a local facilitator.
 
 ```ts
+import { Facilitator } from "crosshatch"
+
 Facilitator.layer({
   baseUrl: "http://127.0.0.1:4647",
 })
 ```
 
 The service must implement the `FacilitatorApi` exported from
-`crosshatch/FacilitatorApi`. Its endpoints are `POST /verify`, `POST /settle`,
-and `GET /supported`. Networks returned by `/supported` are CAIP-2 `ChainId`
-values, and legacy network aliases are not accepted by the schema.
+`crosshatch/FacilitatorApi`. Its mounted endpoints are
+`POST /facilitator/verify`, `POST /facilitator/settle`, and
+`GET /facilitator/supported`. The supported-network schema accepts both CAIP-2
+`ChainId` values and legacy network strings.
 
 ## Implementing a Facilitator
 
@@ -109,29 +115,26 @@ import { FacilitatorApi, FacilitatorApiGroup } from "crosshatch/FacilitatorApi"
 Use `FacilitatorApi` when implementing or mounting a compatible facilitator
 server.
 
-## Development Facilitator
+## Mock Settlement
 
-Run a local stub facilitator with the Crosshatch CLI:
+Use the development facilitator to exercise payment flows without moving funds.
+It accepts every verification and returns a placeholder successful settlement;
+it does not verify signatures or broadcast transactions.
 
-```sh
-crosshatch dev
-```
-
-It listens on `127.0.0.1:4647` by default. The host and port are configurable:
+Start it on a known port:
 
 ```sh
-crosshatch dev --host 0.0.0.0 --port 8787
+crosshatch dev --port 4647
 ```
 
-The server exposes `/verify`, `/settle`, `/supported`, `/health`, and
-`/openapi.json`. Connect with an explicit client layer:
+Then reserve `CROSSHATCH_DEV_PORT` in the application process to make
+`Facilitator.layer()` use it:
 
-```ts
-Facilitator.layer({
-  baseUrl: "http://127.0.0.1:4647",
-})
+```sh
+CROSSHATCH_DEV_PORT=4647 your-dev-command
 ```
 
-The development facilitator always verifies successfully and returns a
-placeholder settlement transaction. It does not perform cryptographic
-verification or broadcast transactions and must not be used in production.
+`CROSSHATCH_DEV_HOST` is also reserved and defaults to `localhost`. When
+`CROSSHATCH_DEV_PORT` is set, these variables take precedence over `baseUrl` and
+the hosted facilitator. Match `--host` and `CROSSHATCH_DEV_HOST` when the server
+is not local.
