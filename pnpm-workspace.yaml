@@ -32,6 +32,7 @@ catalog:
   "@playwright/test": ^1.58.2
   "@scure/bip39": ^2.2.0
   "@standard-schema/spec": ^1.1.0
+  "@signinwithethereum/siwe": ^4.2.0
   "@solana-program/memo": ^0.11.2
   "@solana-program/compute-budget": ^0.16.0
   "@solana-program/token": ^0.14.0
@@ -144,6 +145,7 @@ minimumReleaseAgeExclude:
   - "@turbo/windows-arm64@2.9.18"
   - turbo@2.9.18
   - vite@8.1.2
+  - '@x402/core@2.19.0'
 
 allowBuilds:
   bigint-buffer: false
